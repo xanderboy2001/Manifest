@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
 # Strict settings
-set -o errexit
-set -o pipefail
-set -o nounset
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+		set -o errexit
+		set -o pipefail
+		set -o nounset
+fi
 
 # On-the-fly-debugging
 [[ -n "${DEBUG:-}" ]] && set -x
@@ -31,7 +33,9 @@ init() {
 
 get_opt() {
 		local key="$1"
-		grep "^${key}=" "$CONFIG_FILE" | cut -d'=' -f2- | sed 's/^"//;s/"$//'
+		local val
+		val=$(grep "^${key}=" "$CONFIG_FILE" | cut -d'=' -f2- | sed 's/^"//;s/"$//') || return 0
+		echo "$val"
 }
 
 set_opt() {
@@ -45,3 +49,5 @@ set_opt() {
 				echo "${key}=\"${value}\"" >> "$CONFIG_FILE"
 		fi
 }
+
+init

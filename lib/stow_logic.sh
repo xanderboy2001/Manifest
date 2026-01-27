@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
 # Strict settings
-set -o errexit
-set -o pipefail
-set -o nounset
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+		set -o errexit
+		set -o pipefail
+		set -o nounset
+fi
 
 # On-the-fly-debugging
 [[ -n "${DEBUG:-}" ]] && set -x
@@ -24,12 +26,9 @@ if ! command -v stow >/dev/null 2>&1; then
 		exit 1
 fi
 
-# Get this from config later
-MANIFEST_DEFAULT_PATH="${HOME}/.dotfiles_test"
-
 # accept path and target and perform dry run
 dry_run() {
-		local m_path=$MANIFEST_DEFAULT_PATH
+		local m_path=$(get_opt manifest_path)
 		local m_target=""
 
 		# loop through arguments and collect variables
