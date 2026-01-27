@@ -86,8 +86,7 @@ dry_run() {
 
 # list configs in stow
 list_configs() {
-		$configs=$(find "$m_path" -mindepth 1 -maxdepth 1 -type d -not -name '.git' -exec basename {} ';')
-		for config in $configs; do
-				echo $config
-		done
+		local m_path=$MANIFEST_DEFAULT_PATH
+		configs=$(find "$m_path" -mindepth 1 -maxdepth 1 -type d -not -name '.git' -exec basename {} ';')
+		echo "$configs"
 }
