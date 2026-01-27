@@ -25,7 +25,7 @@ if ! command -v stow >/dev/null 2>&1; then
 fi
 
 # Get this from config later
-MANIFEST_DEFAULT_PATH="${HOME}/.dotfiles"
+MANIFEST_DEFAULT_PATH="${HOME}/.dotfiles_test"
 
 # accept path and target and perform dry run
 dry_run() {
