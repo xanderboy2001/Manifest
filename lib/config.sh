@@ -18,6 +18,30 @@ __base="$(basename "${__file}" .sh)"
 
 
 #CONFIG_DIR="${XDG_CONFIG_HOME}/manifest"
-CONFIG_DIR=${__dir}/../config"
+CONFIG_DIR="${__dir}/../config"
+CONFIG_FILE="${CONFIG_DIR}/manifest.config"
+TEMPLATE_FILE="./default.conf"
 
-[ ! -d "$CONFIG_DIR" ] && mkdir "$CONFIG_DIR"
+# Create config dir if it doesn't exist
+[[ ! -d "$CONFIG_DIR" ]] && mkdir -p "$CONFIG_DIR"
+
+init() {
+		[[ ! -f "$CONFIG_FILE" ]] && cp "$TEMPLATE_FILE" "$CONFIG_FILE"
+}
+
+get_opt() {
+		local key="$1"
+		grep "^${key}=" "$CONFIG_FILE" | cut -d'=' -f2- | sed 's/^"//;s/"$//'
+}
+
+set_opt() {
+		local key="$1"
+		local value="$2"
+		
+		if grep -q "^${key}=" "$CONFIG_FILE"; then
+				# using '|' delimiter in sed in case value contains slashes
+				sed -i "s|^{key}=.*|${key}=\"${value}\"|" "$CONFIG_FILE"
+		else
+				echo "${key}=\"${value}\"" >> "$CONFIG_FILE"
+		fi
+}
