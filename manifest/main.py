@@ -27,11 +27,12 @@ def main():
 
     # Initial Path Logic
     manifest_path = args.path or cfg.get_opt("manifest_path") or "."
-    final_path = ui.init_ui(manifest_path)
+    if cfg.first_run:
+        final_path = ui.first_run(manifest_path)
 
-    if final_path != manifest_path:
-        cfg.set_opt("manifest_path", final_path)
-        manifest_path = final_path
+        if final_path != manifest_path:
+            cfg.set_opt("manifest_path", final_path)
+            manifest_path = final_path
 
     stow = StowManager(manifest_path)
     configs = stow.list_configs()

@@ -3,6 +3,7 @@ from pathlib import Path
 
 class ConfigManager:
     def __init__(self, config_name="manifest.conf") -> None:
+        self.first_run = False
         self.project_root = Path(__file__).parent.parent
         self.default_file = self.project_root / "default.conf"
 
@@ -35,6 +36,7 @@ class ConfigManager:
     def _ensure_user_config(self) -> None:
         """Clones default.conf to the user's config directory if it doesn't exist."""
         if not self.user_config_path.exists():
+            self.first_run = True
             self.user_config_path.parent.mkdir(parents=True, exist_ok=True)
             with open(self.user_config_path, "w") as f:
                 for key, value in self.defaults.items():
