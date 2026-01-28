@@ -9,9 +9,11 @@ dependencies = [
     "rich>=14.3.1",
 ]
 
+[project.scripts]
+manifest = "main:main"
+
 [dependency-groups]
 dev = [
-    "black>=26.1.0",
     "codespell>=2.4.1",
     "pre-commit>=4.5.1",
 ]
@@ -20,3 +22,15 @@ dev = [
 line-length = 88
 target-version = ['py312']
 include = '\.pyi?$'
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+# Enable Pyflakes (F), Bluebeard/Pycodestyle (E, W), and Isort (I)
+select = ["E", "F", "W", "I"]
+ignore = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["lib"]
