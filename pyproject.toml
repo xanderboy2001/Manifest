@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.scripts]
-manifest = "main:main"
+manifest = "manifest.main:main"
 
 [dependency-groups]
 dev = [
@@ -35,3 +35,13 @@ ignore = []
 
 [tool.ruff.lint.isort]
 known-first-party = ["lib"]
+
+[tool.uv]
+package = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.target.wheel]
+packages = ["manifest"]

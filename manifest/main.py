@@ -3,9 +3,9 @@ import argparse
 
 from rich.console import Console
 
-from lib.config import ConfigManager
-from lib.stow import StowManager
-from lib.ui import UIManager
+from .lib.config import ConfigManager
+from .lib.stow import StowManager
+from .lib.ui import UIManager
 
 
 def main():
