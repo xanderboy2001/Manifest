@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-from enum import nonmember
-from pathlib import Path
+
 from lib.config import ConfigManager
 from lib.stow import StowManager
 from lib.ui import UIManager
