@@ -26,7 +26,7 @@ def main():
     ui = UIManager()
 
     # Initial Path Logic
-    manifest_path = args.path or cfg.get_opt("manifest_path")
+    manifest_path = args.path or cfg.get_opt("manifest_path") or "."
     final_path = ui.init_ui(manifest_path)
 
     if final_path != manifest_path:
