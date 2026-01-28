@@ -7,7 +7,7 @@ class UIManager:
     def __init__(self):
         self.console = Console()
 
-    def init_ui(self, current_path: str) -> str:
+    def print_title(self) -> None:
         """Greeting and path confirmation."""
         self.console.print(
             Panel.fit(
@@ -15,19 +15,16 @@ class UIManager:
             )
         )
 
-        # Interactive confirmation/update of path
-        if not current_path:
-            current_path = "."
-
+    def first_run(self, current_path: str) -> str:
+        self.print_title()
         confirm = questionary.confirm(
             f"Use manifest path: {current_path}?", default=True
         ).ask()
 
         if not confirm:
             current_path = questionary.path(
-                "Enter the path to your dotfiles:", default=current_path
+                "Enter the path for your dotfiles to live:", default=current_path
             ).ask()
-
         return current_path
 
     def choose_config(self, configs: list[str]) -> str | None:
