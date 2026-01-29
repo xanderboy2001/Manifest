@@ -35,6 +35,7 @@ def main():
             manifest_path = final_path
 
     stow = StowManager(manifest_path)
+    stow.ensure_manifest_dir()
     configs = stow.list_configs()
     selected = ui.choose_config(configs)
 
