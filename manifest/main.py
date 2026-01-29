@@ -8,6 +8,26 @@ from .lib.ui import UIManager
 from .lib.utils import print_debug, print_error
 
 
+def handle_stow_menu(selected: str, stowManager: StowManager) -> None:
+    """Run functions from stow menu. Takes selected option as input."""
+    match selected:
+        case "list_configs":
+            for config in stowManager.list_configs():
+                print(f"Config: {config}")
+        case "add_config":
+            pass
+        case "remove_config":
+            pass
+        case "deploy_config":
+            pass
+        case "update_config":
+            pass
+        case "back":
+            pass
+        case _:
+            print_error(f"Unknown function in stow menu: {selected}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Manifest: Dotfile Manager")
     parser.add_argument(
@@ -45,6 +65,7 @@ def main():
             stow_menu_function = ui.stow_menu()
             if stow_menu_function:
                 print_debug(stow_menu_function)
+                handle_stow_menu(stow_menu_function, stow)
             else:
                 print_error(f"{stow_menu_function} not found!")
         case "settings":
