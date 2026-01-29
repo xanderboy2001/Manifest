@@ -28,7 +28,6 @@ def handle_stow_menu(stowManager: StowManager, ui: UIManager) -> bool:
                 return True
             case _:
                 print_error(f"Unknown function in stow menu: {selected}")
-        sys.exit(0)
 
 
 def main():

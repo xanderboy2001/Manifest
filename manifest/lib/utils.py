@@ -1,6 +1,8 @@
 import logging
 from typing import List, Union
 
+import questionary
+from questionary import Style
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.panel import Panel
@@ -21,6 +23,13 @@ custom_theme = Theme(
         "menu.item": f"{pal['primary']}",  # Pink
         "menu.muted": f"{pal['muted']}",  # Grey
     }
+)
+
+custom_questionary_style = Style(
+    [
+        ("instruction", f"fg:{pal['muted']} italic"),
+        ("qmark", f"fg:{pal['primary']} bold"),
+    ]
 )
 
 console = Console(theme=custom_theme)
@@ -68,14 +77,18 @@ def print_menu_output(data: Union[str, List[str]], title: str = "Output") -> Non
             table.add_row(f"[{pal['primary']}]•[/{pal['primary']}]  {item}")
 
         console.print(Panel(table, border_style=border_color, expand=False))
-        return
-
-    # Handle strings with a Panel
-    console.print(
-        Panel(
-            data,
-            title=f"[{title_style}]{title}[/{title_style}]",
-            border_style=border_color,
-            expand=False,
+    else:
+        # Handle strings with a Panel
+        console.print(
+            Panel(
+                data,
+                title=f"[{title_style}]{title}[/{title_style}]",
+                border_style=border_color,
+                expand=False,
+            )
         )
-    )
+
+    questionary.press_any_key_to_continue(
+        message="Press any key to return to previous menu...",
+        style=custom_questionary_style,
+    ).ask()
