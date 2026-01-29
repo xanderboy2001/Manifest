@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import argparse
+import sys
 
 from .lib.config import ConfigManager
 from .lib.stow import StowManager
 from .lib.ui import UIManager
-from .lib.utils import print_debug
+from .lib.utils import print_debug, print_error
 
 
 def main():
@@ -37,8 +38,20 @@ def main():
     stow = StowManager(manifest_path)
     stow.ensure_manifest_dir()
 
-    menu_function = ui.main_menu()
-    print_debug(menu_function or "")
+    main_menu_function = ui.main_menu()
+    print_debug(main_menu_function or "")
+    match main_menu_function:
+        case "stow":
+            stow_menu_function = ui.stow_menu()
+            if stow_menu_function:
+                print_debug(stow_menu_function)
+            else:
+                print_error(f"{stow_menu_function} not found!")
+        case "settings":
+            pass
+        case "exit":
+            print_debug("Goodbye!")
+            sys.exit(0)
 
 
 if __name__ == "__main__":

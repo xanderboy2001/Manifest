@@ -68,6 +68,26 @@ class UIManager:
             "Main Menu", choices=choices, style=self.style, pointer="󰅂"
         ).ask()
 
+    def stow_menu(self) -> str | None:
+        """Entry point for stow-related functions"""
+        choices = [
+            Choice(
+                title="List All Configurations in Manifest (Stowed/Unstowed)",
+                value="list_configs",
+            ),
+            Choice(title="Add Existing Configuration to Manifest", value="add_config"),
+            Choice(
+                title="Remove Existing Configuration from Manifest",
+                value="remove_config",
+            ),
+            Choice(title="Deploy Configuration from Manifest", value="deploy_config"),
+            Choice(title="Update Configuration from Manifest", value="update_config"),
+            Choice(title="Back", value="back"),
+        ]
+        return questionary.select(
+            "Manage Manifest", choices=choices, style=self.style, pointer="󰅂"
+        ).ask()
+
     def choose_config(self, configs: list[str]) -> str | None:
         """Keyboard-centric selection using questionary."""
         if not configs:
