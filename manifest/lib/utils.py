@@ -1,11 +1,20 @@
-from rich.console import Console
+import logging
+
+from rich.logging import RichHandler
+
+logging.basicConfig(
+    level="DEBUG",
+    format="%(message)s",
+    datefmt="[%X]",
+    handlers=[RichHandler(rich_tracebacks=True, markup=True)],
+)
+
+logger = logging.getLogger("rich")
 
 
 def print_error(message: str) -> None:
-    error_console = Console(stderr=True, style="bold red")
-    error_console.print(message)
+    logger.error(message)
 
 
 def print_debug(message: str) -> None:
-    debug_console = Console()
-    debug_console.log(message)
+    logger.debug(message)
