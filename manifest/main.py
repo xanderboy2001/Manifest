@@ -21,7 +21,9 @@ def main():
     args = parser.parse_args()
 
     cfg = ConfigManager()
-    ui = UIManager()
+
+    ui_theme = cfg.get_opt("theme") or "ansi"
+    ui = UIManager(theme=ui_theme)
 
     # Initial Path Logic
     manifest_path = args.path or cfg.get_opt("manifest_path") or "."

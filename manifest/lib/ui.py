@@ -5,17 +5,34 @@ from rich.panel import Panel
 
 
 class UIManager:
-    def __init__(self):
+    def __init__(self, theme="dracula"):
         self.console = Console()
+
+        themes = {
+            "dracula": {
+                "primary": "#ff79c6",  # Pink
+                "secondary": "#8b39fd",  # Cyan
+                "success": "#50fa7b",  # Green
+                "muted": "#6272a4",  # Gray
+            },
+            "ansi": {
+                "primary": "ansimagenta",
+                "secondary": "ansicyan",
+                "success": "ansigreen",
+                "muted": "ansibrightblack",
+            },
+        }
+
+        colors = themes.get(theme, themes["dracula"])
 
         self.style = Style(
             [
-                ("qmark", "fg:#ff79c6 bold"),
+                ("qmark", f"fg:{colors['primary']} bold"),
                 ("question", "bold"),
-                ("pointer", "fg:#ff79c6 bold"),
-                ("highlighted", "fg:#8b39fd bold"),
-                ("selected", "fg:#50fa7b"),
-                ("instruction", "fg:#6272a4"),
+                ("pointer", f"fg:{colors['primary']} bold"),
+                ("highlighted", f"fg:{colors['secondary']} bold"),
+                ("selected", f"fg:{colors['success']}"),
+                ("instruction", f"fg:{colors['muted']}"),
             ]
         )
 
