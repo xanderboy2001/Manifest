@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 from typing import List
 
-from .utils import Colors, print_error
+from .utils import print_debug, print_error
 
 
 class StowManager:
@@ -52,11 +52,13 @@ class StowManager:
             target_package,
         ]
 
-        print(f"{Colors.BLUE}Running: {' '.join(cmd)}{Colors.END}")
+        #        print(f"{Colors.BLUE}Running: {' '.join(cmd)}{Colors.END}")
+        print_debug("Running: {' '.join(cmd)}")
         result = subprocess.run(cmd, capture_output=True, text=True)
 
         if result.returncode != 0:
             print_error(result.stderr)
         else:
             print(result.stdout)
-            print(f"{Colors.GREEN}Dry run complete.{Colors.END}")
+            # print(f"{Colors.GREEN}Dry run complete.{Colors.END}")
+            print_debug("Dry run complete.")
