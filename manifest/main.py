@@ -8,24 +8,27 @@ from .lib.ui import UIManager
 from .lib.utils import print_debug, print_error, print_menu_output
 
 
-def handle_stow_menu(selected: str, stowManager: StowManager) -> None:
+def handle_stow_menu(stowManager: StowManager, ui: UIManager) -> bool:
     """Run functions from stow menu. Takes selected option as input."""
-    match selected:
-        case "list_configs":
-            configs = stowManager.list_configs()
-            print_menu_output(configs, title="Configs")
-        case "add_config":
-            pass
-        case "remove_config":
-            pass
-        case "deploy_config":
-            pass
-        case "update_config":
-            pass
-        case "back":
-            pass
-        case _:
-            print_error(f"Unknown function in stow menu: {selected}")
+    while True:
+        selected = ui.stow_menu()
+        match selected:
+            case "list_configs":
+                configs = stowManager.list_configs()
+                print_menu_output(configs, title="Configs")
+            case "add_config":
+                pass
+            case "remove_config":
+                pass
+            case "deploy_config":
+                pass
+            case "update_config":
+                pass
+            case "back" | None:
+                return True
+            case _:
+                print_error(f"Unknown function in stow menu: {selected}")
+        sys.exit(0)
 
 
 def main():
@@ -58,21 +61,17 @@ def main():
     stow = StowManager(manifest_path)
     stow.ensure_manifest_dir()
 
-    main_menu_function = ui.main_menu()
-    print_debug(main_menu_function or "")
-    match main_menu_function:
-        case "stow":
-            stow_menu_function = ui.stow_menu()
-            if stow_menu_function:
-                print_debug(stow_menu_function)
-                handle_stow_menu(stow_menu_function, stow)
-            else:
-                print_error(f"{stow_menu_function} not found!")
-        case "settings":
-            pass
-        case "exit":
-            print_debug("Goodbye!")
-            sys.exit(0)
+    while True:
+        main_menu_function = ui.main_menu()
+        print_debug(main_menu_function or "")
+        match main_menu_function:
+            case "stow":
+                handle_stow_menu(stowManager=stow, ui=ui)
+            case "settings":
+                pass
+            case "exit" | None:
+                print_debug("Goodbye!")
+                sys.exit(0)
 
 
 if __name__ == "__main__":
