@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 import argparse
 
-from rich.console import Console
-
 from .lib.config import ConfigManager
 from .lib.stow import StowManager
 from .lib.ui import UIManager
+from .lib.utils import print_debug
 
 
 def main():
-    console = Console()
     parser = argparse.ArgumentParser(description="Manifest: Dotfile Manager")
     parser.add_argument(
         "--path", "-p", help="Override default manifest path", default=None
@@ -36,17 +34,9 @@ def main():
 
     stow = StowManager(manifest_path)
     stow.ensure_manifest_dir()
-    configs = stow.list_configs()
-    selected = ui.choose_config(configs)
 
-    if selected:
-        console.print(f"\n[bold green]▶[/bold green] Selected: [cyan]{selected}[/cyan]")
-
-        # Provide feedback via rich during the stow operation
-        with console.status(f"[bold blue]Stowing {selected}...", spinner="dots"):
-            stow.dry_run(selected, args.target)
-
-        console.print("[bold green]Success![/bold green] Operation completed.")
+    menu_function = ui.main_menu()
+    print_debug(menu_function or "")
 
 
 if __name__ == "__main__":
