@@ -1,5 +1,26 @@
 from pathlib import Path
 
+THEMES = {
+    "dracula": {
+        "primary": "#ff79c6",  # Pink (Focus/Hotkeys)
+        "secondary": "#bd93f9",  # Purple (Titles)
+        "success": "#50fa7b",  # Green
+        "warning": "#ffb86c",  # Orange
+        "error": "#ff5555",  # Red
+        "muted": "#6272a4",  # Comment/Grey
+        "border": "#44475a",  # Current Line (Subtle)
+    },
+    "ansi": {
+        "primary": "magenta",
+        "secondary": "cyan",
+        "success": "green",
+        "warning": "yellow",
+        "error": "red",
+        "muted": "bright_black",
+        "border": "white",
+    },
+}
+
 
 class ConfigManager:
     def __init__(self, config_name="manifest.conf") -> None:

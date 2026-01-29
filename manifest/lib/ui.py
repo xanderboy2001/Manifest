@@ -3,27 +3,14 @@ from questionary import Choice, Style
 from rich.console import Console
 from rich.panel import Panel
 
+from .config import THEMES
+
 
 class UIManager:
     def __init__(self, theme="dracula"):
         self.console = Console()
 
-        themes = {
-            "dracula": {
-                "primary": "#ff79c6",  # Pink
-                "secondary": "#8b39fd",  # Cyan
-                "success": "#50fa7b",  # Green
-                "muted": "#6272a4",  # Gray
-            },
-            "ansi": {
-                "primary": "ansimagenta",
-                "secondary": "ansicyan",
-                "success": "ansigreen",
-                "muted": "ansibrightblack",
-            },
-        }
-
-        colors = themes.get(theme, themes["dracula"])
+        colors = THEMES.get(theme, THEMES["dracula"], THEMES["ansi"])
 
         self.style = Style(
             [
