@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import questionary
 from questionary import Choice, Style
 from rich.console import Console
@@ -38,9 +40,10 @@ class UIManager:
         ).ask()
 
         if not confirm:
-            current_path = questionary.path(
-                "Enter the path for your dotfiles to live:", default=current_path
-            ).ask()
+            current_path = self.get_path(
+                message="Enter the path for your dotfiles to live:",
+                starting_dir=current_path,
+            )
         return current_path
 
     def main_menu(self) -> str | None:
@@ -73,6 +76,14 @@ class UIManager:
         ]
         return questionary.select(
             "Manage Manifest", choices=choices, style=self.style, pointer="󰅂"
+        ).ask()
+
+    def get_path(self, message: str = "Enter Path:", starting_dir: str = "~") -> str:
+        initial_path = str(Path(starting_dir).expanduser())
+        if not initial_path.endswith("/"):
+            initial_path += "/"
+        return questionary.path(
+            message=message, default=initial_path, style=self.style
         ).ask()
 
     def choose_config(self, configs: list[str]) -> str | None:

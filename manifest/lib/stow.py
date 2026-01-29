@@ -1,5 +1,7 @@
 import shutil
 import subprocess
+from os import walk
+from os.path import islink, join
 from pathlib import Path
 from typing import List, Optional
 
@@ -34,6 +36,20 @@ class StowManager:
             if item.is_dir() and item.name != ".git":
                 configs.append(item.name)
         return sorted(configs)
+
+    def add_config(self, config_path: Path) -> str | List[str]:
+        """Adds existing config files to Manifest."""
+        if islink(config_path):
+            print_error(f"{config_path} is a symlink!")
+            return "error"
+        config_files = []
+        for root, _, files in walk(config_path):
+            config_files += [join(root, name) for name in files]
+        for file in config_files:
+            if islink(file):
+                print_error(f"{file} is a symlink!")
+                return "error"
+        return config_files
 
     def dry_run(self, target_package: str, target_dir: Optional[str] = None) -> None:
         """Runs stow in simulation mode."""

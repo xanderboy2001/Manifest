@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import sys
+from pathlib import Path
 
 from .lib.config import ConfigManager
 from .lib.stow import StowManager
@@ -17,7 +18,11 @@ def handle_stow_menu(stowManager: StowManager, ui: UIManager) -> bool:
                 configs = stowManager.list_configs()
                 print_menu_output(configs, title="Configs")
             case "add_config":
-                pass
+                config_path = ui.get_path(
+                    message="Path to configuration files (/home/user/.config/program)",
+                    starting_dir="~",
+                )
+                print_menu_output(stowManager.add_config(Path(config_path)))
             case "remove_config":
                 pass
             case "deploy_config":
