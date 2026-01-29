@@ -52,27 +52,30 @@ def print_menu_output(data: Union[str, List[str]], title: str = "Output") -> Non
         console.print(f"[menu.muted]No {title.lower()} found.[/menu.muted]")
         return
 
+    border_color = pal["border"]
+    title_style = f"{pal['secondary']} bold"
+
     # Handle lists like a table
     if isinstance(data, list):
         table = Table(
             box=None,
             show_header=False,
             padding=(0, 1),
-            title=f"[menu.title]{title}[/menu.title]",
+            title=f"[{title_style}]{title}[/{title_style}]",
             title_justify="left",
         )
         for item in data:
-            table.add_row(f"[menu.item]•[/menu.item]  {item}")
+            table.add_row(f"[{pal['primary']}]•[/{pal['primary']}]  {item}")
 
-        console.print(Panel(table, border_style="menu.border", expand=False))
+        console.print(Panel(table, border_style=border_color, expand=False))
         return
 
     # Handle strings with a Panel
     console.print(
         Panel(
             data,
-            title=f"[menu.title]{title}[/menu.title]",
-            border_style="menu.border",
+            title=f"[{title_style}]{title}[/{title_style}]",
+            border_style=border_color,
             expand=False,
         )
     )

@@ -5,15 +5,15 @@ import sys
 from .lib.config import ConfigManager
 from .lib.stow import StowManager
 from .lib.ui import UIManager
-from .lib.utils import print_debug, print_error
+from .lib.utils import print_debug, print_error, print_menu_output
 
 
 def handle_stow_menu(selected: str, stowManager: StowManager) -> None:
     """Run functions from stow menu. Takes selected option as input."""
     match selected:
         case "list_configs":
-            for config in stowManager.list_configs():
-                print(f"Config: {config}")
+            configs = stowManager.list_configs()
+            print_menu_output(configs, title="Configs")
         case "add_config":
             pass
         case "remove_config":

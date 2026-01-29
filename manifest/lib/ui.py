@@ -10,7 +10,7 @@ class UIManager:
     def __init__(self, theme="dracula"):
         self.console = Console()
 
-        colors = THEMES.get(theme, THEMES["dracula"], THEMES["ansi"])
+        colors = THEMES.get(theme, THEMES.get("dracula", THEMES["ansi"]))
 
         self.style = Style(
             [
@@ -69,7 +69,7 @@ class UIManager:
             ),
             Choice(title="Deploy Configuration from Manifest", value="deploy_config"),
             Choice(title="Update Configuration from Manifest", value="update_config"),
-            Choice(title="󰌍Back", value="back"),
+            Choice(title="󰌍 Back", value="back"),
         ]
         return questionary.select(
             "Manage Manifest", choices=choices, style=self.style, pointer="󰅂"
