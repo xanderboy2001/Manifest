@@ -55,6 +55,13 @@ def print_success(message: str) -> None:
     console.print(f"[success]✔ {message}[/success]")
 
 
+def ask_to_return():
+    questionary.press_any_key_to_continue(
+        message="Press any key to return to the previous menu...",
+        style=custom_questionary_style,
+    ).ask()
+
+
 def print_menu_output(data: Union[str, List[str]], title: str = "Output") -> None:
     """Prints a Dracula-themed panel or list."""
     if not data:
@@ -88,7 +95,4 @@ def print_menu_output(data: Union[str, List[str]], title: str = "Output") -> Non
             )
         )
 
-    questionary.press_any_key_to_continue(
-        message="Press any key to return to previous menu...",
-        style=custom_questionary_style,
-    ).ask()
+    ask_to_return()

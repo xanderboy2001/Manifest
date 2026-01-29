@@ -6,7 +6,13 @@ from pathlib import Path
 from .lib.config import ConfigManager
 from .lib.stow import StowManager
 from .lib.ui import UIManager
-from .lib.utils import print_debug, print_error, print_menu_output, print_success
+from .lib.utils import (
+    ask_to_return,
+    print_debug,
+    print_error,
+    print_menu_output,
+    print_success,
+)
 
 
 def handle_stow_menu(stowManager: StowManager, ui: UIManager) -> bool:
@@ -24,7 +30,8 @@ def handle_stow_menu(stowManager: StowManager, ui: UIManager) -> bool:
                 )
                 output = stowManager.add_config(Path(config_path))
                 if output == "error":
-                    print_error(f"Could not add {config_path}")
+                    print_error(f"Could not add {config_path} to Manifest!")
+                    ask_to_return()
                 else:
                     print_menu_output(output)
                     print_success(f"Successfully added {config_path} to Manifest!")
