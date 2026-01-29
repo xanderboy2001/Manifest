@@ -34,9 +34,7 @@ class UIManager:
             return None
 
         selected = questionary.select(
-            "Which configuration would you like to stow?",
-            choices=configs,
-            use_shortcut_keys=True,
+            "Which configuration would you like to stow?", choices=configs
         ).ask()
 
         return selected
