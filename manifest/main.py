@@ -70,7 +70,20 @@ def handle_stow_menu(stowManager: StowManager, ui: UIManager) -> bool:
                     print_success(f"Successfully removed {config_name} from Manifest!")
                 ask_to_return()
             case "deploy_config":
-                pass
+                config_name = ui.choose_config(
+                    configs=stowManager.list_configs(),
+                    prompt="Choose a config to deploy",
+                )
+                while config_name is None:
+                    print_error("Please select a config")
+                    config_name = ui.choose_config(
+                        configs=stowManager.list_configs(),
+                        prompt="Choose a config to deploy",
+                    )
+                output = stowManager.deploy_config(config_name)
+                if output != "error":
+                    print_success(f"Successfully deployed {config_name}!")
+                ask_to_return()
             case "update_config":
                 pass
             case "back" | None:

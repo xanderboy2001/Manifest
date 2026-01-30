@@ -120,24 +120,13 @@ class StowManager:
                     )
                     return "error"
                 config_files.append(relpath(full_path, config_path))
-        with Status(
-            f"Adding {config_path.name} to Manifest...", spinner="dots"
-        ) as status:
-            try:
-                new_location.parent.mkdir(parents=True, exist_ok=True)
-                move(str(config_path), str(new_location.parent))
-                cmd = ["stow", "--dir", str(self.manifest_path), pkg_name]
-                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-                status.update("[bold]Finishing up...[/]")
-                if result.stdout:
-                    print_debug(result.stdout)
-                return config_files
-            except subprocess.CalledProcessError as e:
-                print_error(f"Stow failed: {e.stderr}")
-                return "error"
-            except Exception as e:
-                print_error(f"Unexpected error: {str(e)}")
-                return "error"
+        try:
+            new_location.parent.mkdir(parents=True, exist_ok=True)
+            move(str(config_path), str(new_location.parent))
+            self.deploy_config(pkg_name)
+        except Exception as e:
+            print_error(f"Unexpected error: {str(e)}")
+            return "error"
 
     def remove_config(self, config_name: str) -> str:
         """Remove a configuration package from the manifest and restore its files.
@@ -191,3 +180,36 @@ class StowManager:
             except Exception as e:
                 print_error(f"Unexpected error: {str(e)}")
                 return "error"
+
+    def deploy_config(self, config_name: str) -> str:
+        """Deploy a configuration package from the manifest using GNU Stow.
+
+        This method executes the stow command to create symbolic links for the
+        specified package from the manifest directory to the target environment.
+
+        Args:
+            config_name (str): The name of the configuration package to deploy.
+
+        Returns:
+            str: A status string indicating "success" or "error".
+
+        """
+        if config_name not in self.list_configs():
+            print_error(f"Config not found in Manifest: {config_name}")
+            return "error"
+        with Status(
+            f"Deploying {config_name} from Manifest...", spinner="dots"
+        ) as status:
+            try:
+                cmd = ["stow", "--dir", self.manifest_path, "--stow", config_name]
+                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+                status.update("[bold]Finishing Up...[/]")
+                if result.stdout:
+                    print_debug(result.stdout)
+            except subprocess.CalledProcessError as e:
+                print_error(f"Stow failed: {e.stderr}")
+                return "error"
+            except Exception as e:
+                print_error(f"Unexpected error: {str(e)}")
+                return "error"
+            return "success"
