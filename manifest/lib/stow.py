@@ -82,9 +82,12 @@ class StowManager:
         for item in self.manifest_path.iterdir():
             if item.is_dir() and item.name != ".git":
                 configs.append(item.name)
-        return sorted(configs)
+        if configs:
+            return sorted(configs)
+        else:
+            return ["No configs found."]
 
-    def add_config(self, config_path: Path) -> str | list[str]:
+    def add_config(self, config_path: Path) -> str:
         """Add existing configuration files to the manifest.
 
         Moves the specified configuration directory into the manifest structure
@@ -127,6 +130,7 @@ class StowManager:
         except Exception as e:
             print_error(f"Unexpected error: {str(e)}")
             return "error"
+        return "success"
 
     def remove_config(self, config_name: str) -> str:
         """Remove a configuration package from the manifest and restore its files.
