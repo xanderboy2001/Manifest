@@ -11,10 +11,10 @@ import argparse
 import sys
 from pathlib import Path
 
-from .lib.config import ConfigManager
-from .lib.stow import StowManager
-from .lib.ui import UIManager
-from .lib.utils import (
+from manifest.core.config import ConfigManager
+from manifest.core.stow import StowManager
+from manifest.core.ui import UIManager
+from manifest.core.utils import (
     ask_to_return,
     print_debug,
     print_error,
@@ -23,7 +23,7 @@ from .lib.utils import (
 )
 
 
-def handle_stow_menu(stowManager: StowManager, ui: UIManager) -> bool:
+def handle_stow_menu(stowManager: StowManager, uiManager: UIManager) -> bool:
     """Execute functions selected from the stow management sub-menu.
 
     Provides a loop that captures user input from the UI and dispatches the
@@ -31,20 +31,20 @@ def handle_stow_menu(stowManager: StowManager, ui: UIManager) -> bool:
 
     Args:
         stowManager (StowManager): The manager instance handling Stow logic.
-        ui (UIManager): The UI instance handling user interaction and menus.
+        uiManager (UIManager): The UI instance handling user interaction and menus.
 
     Returns:
         bool: True if the user chooses to return to the previous menu.
 
     """
     while True:
-        selected = ui.stow_menu()
+        selected = uiManager.stow_menu()
         match selected:
             case "list_configs":
                 configs = stowManager.list_configs()
                 print_menu_output(configs, title="Configs")
             case "add_config":
-                config_path = ui.get_path(
+                config_path = uiManager.get_path(
                     message="Path to configuration files (/home/user/.config/program)",
                     starting_dir="~",
                 )
@@ -55,13 +55,13 @@ def handle_stow_menu(stowManager: StowManager, ui: UIManager) -> bool:
                     print_success(f"Successfully added {config_path} to Manifest!")
                     print_menu_output(output, title="Files Stowed")
             case "remove_config":
-                config_name = ui.choose_config(
+                config_name = uiManager.choose_config(
                     configs=stowManager.list_configs(),
                     prompt="Choose a config to remove from Manifest",
                 )
                 while config_name is None:
                     print_error("Please select a config")
-                    config_name = ui.choose_config(
+                    config_name = uiManager.choose_config(
                         configs=stowManager.list_configs(),
                         prompt="Choose a config to remove from Manifest",
                     )
@@ -70,13 +70,13 @@ def handle_stow_menu(stowManager: StowManager, ui: UIManager) -> bool:
                     print_success(f"Successfully removed {config_name} from Manifest!")
                 ask_to_return()
             case "deploy_config":
-                config_name = ui.choose_config(
+                config_name = uiManager.choose_config(
                     configs=stowManager.list_configs(),
                     prompt="Choose a config to deploy",
                 )
                 while config_name is None:
                     print_error("Please select a config")
-                    config_name = ui.choose_config(
+                    config_name = uiManager.choose_config(
                         configs=stowManager.list_configs(),
                         prompt="Choose a config to deploy",
                     )
@@ -85,13 +85,13 @@ def handle_stow_menu(stowManager: StowManager, ui: UIManager) -> bool:
                     print_success(f"Successfully deployed {config_name}!")
                 ask_to_return()
             case "update_config":
-                config_name = ui.choose_config(
+                config_name = uiManager.choose_config(
                     configs=stowManager.list_configs(),
                     prompt="Choose a config to redeploy",
                 )
                 while config_name is None:
                     print_error("Please select a config")
-                    config_name = ui.choose_config(
+                    config_name = uiManager.choose_config(
                         configs=stowManager.list_configs(),
                         prompt="Choose a config to redeploy",
                     )
@@ -103,6 +103,43 @@ def handle_stow_menu(stowManager: StowManager, ui: UIManager) -> bool:
                 return True
             case _:
                 print_error(f"Unknown function in stow menu: {selected}")
+
+
+def handle_settings_menu(configManager: ConfigManager, uiManger: UIManager) -> bool:
+    """Run functions from the settings menu based on user selection.
+
+    Provides a loop that captures user input from the settings sub-menu and
+    dispatches corresponding configuration tasks such as viewing, editing,
+    importing, or exporting application settings.
+
+    Args:
+        configManager (ConfigManager): The configuration manager instance for handling
+            settings persistence and configuration parsing.
+        uiManger (UIManager): The UI instance handling user interaction
+            and settings menus.
+
+    Returns:
+        bool: True if the user chooses to return to the previous menu.
+
+    """
+    while True:
+        selected = uiManger.settings_menu()
+        match selected:
+            case "view_settings":
+                uiManger.print_settings_table(configManager.get_all_opts())
+            case "edit_settings":
+                pass
+            case "import_settings":
+                pass
+            case "export_settings":
+                pass
+            case "reset_settings":
+                pass
+            case "back" | None:
+                return True
+            case _:
+                print_error(f"Unknown function in settings menu: {selected}")
+        ask_to_return()
 
 
 def main():
@@ -147,9 +184,9 @@ def main():
         print_debug(main_menu_function or "")
         match main_menu_function:
             case "stow":
-                handle_stow_menu(stowManager=stow, ui=ui)
+                handle_stow_menu(stowManager=stow, uiManager=ui)
             case "settings":
-                pass
+                handle_settings_menu(configManager=cfg, uiManger=ui)
             case "exit" | None:
                 print_debug("Goodbye!")
                 sys.exit(0)

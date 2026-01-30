@@ -28,6 +28,7 @@ include = '\.pyi?$'
 line-length = 88
 target-version = "py312"
 preview = true
+extend-exclude = ["__init__.py"]
 
 [tool.ruff.lint]
 # Enable pydocstyle checks (D), Pyflakes (F), Bluebeard/Pycodestyle (E, W), and Isort (I)
