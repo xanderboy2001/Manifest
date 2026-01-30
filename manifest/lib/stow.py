@@ -138,3 +138,56 @@ class StowManager:
             except Exception as e:
                 print_error(f"Unexpected error: {str(e)}")
                 return "error"
+
+    def remove_config(self, config_name: str) -> str:
+        """Remove a configuration package from the manifest and restore its files.
+
+        This method unlinks the package using GNU Stow, moves the physical files
+        back to their original location in the parent directory of the manifest,
+        and deletes the package directory from the manifest.
+
+        Args:
+            config_name (str): The name of the configuration package to remove.
+
+        Returns:
+            str: A status string indicating "success" or "error".
+
+        """
+        if config_name not in self.list_configs():
+            print_error(f"Config not found in Manifest: {config_name}")
+            return "error"
+        with Status(
+            f"Removing {config_name} from Manifest...", spinner="dots"
+        ) as status:
+            try:
+                pkg_dir = self.manifest_path / config_name
+                cmd = ["stow", "--dir", self.manifest_path, "--delete", config_name]
+                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+                status.update("[bold]Finishing up...[/]")
+                if result.stdout:
+                    print_debug(result.stdout)
+                payload_items = [x for x in pkg_dir.iterdir() if x.name != ".git"]
+
+                if not payload_items:
+                    print_error(f"No content found in {pkg_dir}")
+                    return "error"
+
+                for item in payload_items:
+                    target_root = self.manifest_path.parent
+                    destination = target_root / item.name
+
+                    if item.is_dir() and destination.exists():
+                        for subitem in item.iterdir():
+                            move(str(subitem), str(destination))
+                    else:
+                        move(str(item), str(target_root))
+
+                shutil.rmtree(pkg_dir)
+
+                return "success"
+            except subprocess.CalledProcessError as e:
+                print_error(f"Stow failed: {e.stderr}")
+                return "error"
+            except Exception as e:
+                print_error(f"Unexpected error: {str(e)}")
+                return "error"
