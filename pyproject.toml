@@ -29,8 +29,8 @@ line-length = 88
 target-version = "py312"
 
 [tool.ruff.lint]
-# Enable Pyflakes (F), Bluebeard/Pycodestyle (E, W), and Isort (I)
-select = ["E", "F", "W", "I"]
+# Enable pydocstyle checks (D), Pyflakes (F), Bluebeard/Pycodestyle (E, W), and Isort (I)
+select = ["D", "E", "F", "W", "I", "DOC", "UP"]
 ignore = []
 
 [tool.ruff.lint.isort]
