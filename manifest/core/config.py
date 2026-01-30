@@ -9,28 +9,11 @@ Attributes:
 
 """
 
+import shutil
+from configparser import ConfigParser
 from pathlib import Path
 
-THEMES = {
-    "dracula": {
-        "primary": "#ff79c6",  # Pink (Focus/Hotkeys)
-        "secondary": "#bd93f9",  # Purple (Titles)
-        "success": "#50fa7b",  # Green
-        "warning": "#ffb86c",  # Orange
-        "error": "#ff5555",  # Red
-        "muted": "#6272a4",  # Comment/Grey
-        "border": "#44475a",  # Current Line (Subtle)
-    },
-    "ansi": {
-        "primary": "magenta",
-        "secondary": "cyan",
-        "success": "green",
-        "warning": "yellow",
-        "error": "red",
-        "muted": "bright_black",
-        "border": "white",
-    },
-}
+from rich.theme import Theme
 
 
 class ConfigManager:
@@ -38,6 +21,7 @@ class ConfigManager:
 
     This class manages the lifecycle of the user's configuration file, ensuring
     defaults are applied on first run and providing methods to retrieve or
+        parser = configparser.ConfigParser()
     modify specific configuration options.
 
     Attributes:
@@ -52,6 +36,9 @@ class ConfigManager:
     def __init__(self, config_name="manifest.conf") -> None:
         """Initialize the ConfigManager and prepare user configuration.
 
+        Sets up project paths and ensures a user configuration file exists by copying
+            defaults if necessary.
+
         Args:
             config_name (str): The filename for the user configuration.
                 Defaults to "manifest.conf".
@@ -59,19 +46,23 @@ class ConfigManager:
         """
         self.first_run = False
         self.project_root = Path(__file__).parent.parent
-        self.default_file = self.project_root / "default.conf"
+        self.template_dir = self.project_root / "default_configs"
+        self.default_file = self.template_dir / "default.conf"
 
         # config_dir = Path(
         # os.getenv("XDG_CONFIG_HOME", Path.home() / "config")
         # ) / "manifest"
-        config_dir = self.project_root / "config" / "manifest"
-        self.user_config_path = config_dir / config_name
+        self.config_dir = self.project_root / "config" / "manifest"
+        self.config_file_path = self.config_dir / config_name
+
+        self.theme_dir = self.config_dir / "themes"
+
+        self.configParser = ConfigParser()
 
         self.defaults = self._parse_file(self.default_file)
-
         self._ensure_user_config()
 
-    def _parse_file(self, path):
+    def _parse_file(self, path: Path) -> dict:
         """Parse key=value files while ignoring comments and whitespace.
 
         Args:
@@ -84,16 +75,27 @@ class ConfigManager:
         options = {}
         if not path.exists():
             return options
+        parser = ConfigParser()
+        try:
+            content = path.read_text()
+            if "[" not in content:
+                content = f"[DEFAULT]\n{content}"
 
-        with open(path) as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
-                if "=" in line:
-                    key, val = line.split("=", 1)
-                    options[key.strip()] = val.strip()
-        return options
+            parser.read_string(content)
+
+            section = parser.sections()[0] if parser.sections() else "DEFAULT"
+            raw_data = dict(parser[section])
+
+            cleaned_data = {}
+            for key, value in raw_data.items():
+                cleaned_value = value.split(";")[0].strip()
+                cleaned_data[key] = cleaned_value
+            return cleaned_data
+        except Exception as e:
+            from .utils import print_error
+
+            print_error(f"Error parsing {path}: {e}")
+            return {}
 
     def _ensure_user_config(self) -> None:
         """Clone default settings to the user's config directory if missing.
@@ -102,14 +104,17 @@ class ConfigManager:
         file with default values, setting the `first_run` flag to True.
 
         """
-        if not self.user_config_path.exists():
-            self.first_run = True
-            self.user_config_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(self.user_config_path, "w") as f:
-                for key, value in self.defaults.items():
-                    f.write(f"{key}={value}\n")
+        config_dir = self.config_file_path.parent
 
-    def get_all_opts(self) -> dict[str, str]:
+        if not config_dir.exists():
+            self.first_run = True
+            shutil.copytree(self.template_dir, config_dir, dirs_exist_ok=True)
+
+            temp_default = config_dir / "default.conf"
+            if temp_default.exists() and temp_default != self.config_file_path:
+                temp_default.rename(self.config_file_path)
+
+    def get_all_opts(self) -> dict | None:
         """Retrieve all current user configuration options.
 
         Parses the user-specific configuration file and returns a dictionary
@@ -120,7 +125,7 @@ class ConfigManager:
                 associated values.
 
         """
-        return self._parse_file(self.user_config_path)
+        return self._parse_file(self.config_file_path)
 
     def get_opt(self, key: str) -> str | None:
         """Retrieve a specific configuration value by key.
@@ -136,7 +141,9 @@ class ConfigManager:
                 does not exist.
 
         """
-        user_opts = self._parse_file(self.user_config_path)
+        user_opts = self._parse_file(self.config_file_path)
+        if not user_opts:
+            return None
         return user_opts.get(key, self.defaults.get(key))
 
     def set_opt(self, key: str, value: str) -> None:
@@ -150,9 +157,30 @@ class ConfigManager:
             value (str): The new value to assign to the key.
 
         """
-        opts = self._parse_file(self.user_config_path)
+        opts = self._parse_file(self.config_file_path)
         opts[key] = value
 
-        with open(self.user_config_path, "w") as f:
+        with open(self.config_file_path, "w") as f:
             for k, v in opts.items():
                 f.write(f"{k}={v}\n")
+
+    def get_rich_style(self) -> Theme:
+        """Load and return a Rich Theme based on the configured theme name.
+
+        Retrieves the 'theme' option from settings and attempts to load the
+        corresponding '.ini' file from the themes directory. Falls back to
+        'ansi.ini' if the specified theme is missing.
+
+        Returns:
+            A rich.theme Theme object initialized with the styles parsed
+            from the theme file.
+
+        """
+        theme_name = self.get_opt("theme") or "ansi"
+        theme_file = self.theme_dir / f"{theme_name}.ini"
+        if not theme_file.exists():
+            theme_file = self.theme_dir / "ansi.ini"
+
+        styles = self._parse_file(theme_file)
+
+        return Theme(styles)

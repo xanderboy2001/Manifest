@@ -16,33 +16,13 @@ Attributes:
 import logging
 
 import questionary
-from questionary import Style
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.panel import Panel
 from rich.table import Table
 from rich.theme import Theme
 
-from .config import THEMES
-
-pal = THEMES["dracula"]
-
-custom_theme = Theme({
-    "info": f"{pal['secondary']}",  # Purple
-    "warning": f"{pal['warning']}",  # Orange
-    "error": f"{pal['error']} bold",  # Red
-    "success": f"{pal['success']}",  # Green
-    "menu.title": f"{pal['secondary']} bold",  # Purple bold
-    "menu.item": f"{pal['primary']}",  # Pink
-    "menu.muted": f"{pal['muted']}",  # Grey
-})
-
-custom_questionary_style = Style([
-    ("instruction", f"fg:{pal['muted']} italic"),
-    ("qmark", f"fg:{pal['primary']} bold"),
-])
-
-console = Console(theme=custom_theme)
+console = Console()
 
 logging.basicConfig(
     level="DEBUG",
@@ -51,6 +31,21 @@ logging.basicConfig(
     handlers=[RichHandler(console=console, rich_tracebacks=True, markup=True)],
 )
 logger = logging.getLogger("rich")
+
+
+def setup_utils_theme(rich_theme: Theme) -> None:
+    """Register the application theme with the utility console.
+
+    Updates the global console instance with the provided Rich theme to
+    ensure consistent styling across all utility-driven output.
+
+    Args:
+        rich_theme (Theme): A rich.theme Theme instance containing the
+            application's color definitions.
+
+    """
+    global console
+    console.push_theme(rich_theme)
 
 
 def print_error(message: str) -> None:
@@ -92,7 +87,7 @@ def ask_to_return() -> None:
     """
     questionary.press_any_key_to_continue(
         message="Press any key to return to the previous menu...",
-        style=custom_questionary_style,
+        # style=custom_questionary_style,
     ).ask()
 
 
@@ -114,8 +109,8 @@ def print_menu_output(data: str | list[str], title: str = "Output") -> None:
         console.print(f"[menu.muted]No {title.lower()} found.[/menu.muted]")
         return
 
-    border_color = pal["border"]
-    title_style = f"{pal['secondary']} bold"
+    # border_color = pal["border"]
+    # title_style = f"{pal['secondary']} bold"
 
     # Handle lists like a table
     if isinstance(data, list):
@@ -123,20 +118,28 @@ def print_menu_output(data: str | list[str], title: str = "Output") -> None:
             box=None,
             show_header=False,
             padding=(0, 1),
-            title=f"[{title_style}]{title}[/{title_style}]",
+            # title=f"[{title_style}]{title}[/{title_style}]",
+            title=title,
             title_justify="left",
         )
         for item in data:
-            table.add_row(f"[{pal['primary']}]•[/{pal['primary']}]  {item}")
+            # table.add_row(f"[{pal['primary']}]•[/{pal['primary']}]  {item}")
+            table.add_row(f"•  {item}")
 
-        console.print(Panel(table, border_style=border_color, expand=False))
+        console.print(
+            Panel(
+                table,  # border_style=border_color,
+                expand=False,
+            )
+        )
     else:
         # Handle strings with a Panel
         console.print(
             Panel(
                 data,
-                title=f"[{title_style}]{title}[/{title_style}]",
-                border_style=border_color,
+                # title=f"[{title_style}]{title}[/{title_style}]",
+                title=title,
+                # border_style=border_color,
                 expand=False,
             )
         )

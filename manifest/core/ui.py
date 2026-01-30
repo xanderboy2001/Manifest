@@ -10,12 +10,10 @@ keyboard-centric user experience.
 from pathlib import Path
 
 import questionary
-from questionary import Choice, Style
+from questionary import Choice
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-
-from .config import THEMES
 
 
 class UIManager:
@@ -31,24 +29,33 @@ class UIManager:
 
     """
 
-    def __init__(self, theme="dracula"):
+    def __init__(self, rich_theme):
         """Initialize the UIManager with a specific color theme.
 
         Args:
-            theme (str): The name of the theme to apply. Defaults to "dracula".
+            rich_theme (Theme): A Rich Theme instance containing styles for
+                'primary', 'secondary', and 'hidden' elements.
 
         """
-        self.console = Console()
+        self.rich_theme = rich_theme
+        self.console = Console(theme=self.rich_theme)
 
-        self.richColors = THEMES.get(theme, THEMES.get("dracula", THEMES["ansi"]))
+        styles = rich_theme.styles
+        prim = styles.get("primary").color.name if "primary" in styles else "ansicyan"
+        sec = (
+            styles.get("secondary").color.name
+            if "secondary" in styles
+            else "ansimagenta"
+        )
+        hidden = (
+            styles.get("hidden").color.name if "hidden" in styles else "ansibrightblack"
+        )
 
-        self.questionaryStyle = Style([
-            ("qmark", f"fg:{self.richColors['primary']} bold"),
-            ("question", "bold"),
-            ("pointer", f"fg:{self.richColors['primary']} bold"),
-            ("highlighted", f"fg:{self.richColors['secondary']} bold"),
-            ("selected", f"fg:{self.richColors['success']}"),
-            ("instruction", f"fg:{self.richColors['muted']}"),
+        self.questionaryStyle = questionary.Style([
+            ("qmark", f"fg:{prim} bold"),
+            ("pointer", f"fg:{prim} bold"),
+            ("highlighted", f"fg:{sec} bold"),
+            ("instruction", f"fg:{hidden} italic"),
         ])
 
     def print_title(self) -> None:
@@ -105,7 +112,10 @@ class UIManager:
         ]
         self.print_title()
         return questionary.select(
-            "Main Menu", choices=choices, style=self.questionaryStyle, pointer="󰅂"
+            "Main Menu",
+            choices=choices,
+            style=self.questionaryStyle,
+            pointer="󰅂",
         ).ask()
 
     def stow_menu(self) -> str | None:
@@ -133,7 +143,10 @@ class UIManager:
             Choice(title="󰌍 Back", value="back"),
         ]
         return questionary.select(
-            "Manage Manifest", choices=choices, style=self.questionaryStyle, pointer="󰅂"
+            "Manage Manifest",
+            choices=choices,
+            style=self.questionaryStyle,
+            pointer="󰅂",
         ).ask()
 
     def settings_menu(self) -> str | None:
@@ -155,7 +168,10 @@ class UIManager:
             Choice(title="󰌍 Back", value="back"),
         ]
         return questionary.select(
-            "Manage Settings", choices=choices, style=self.questionaryStyle, pointer="󰅂"
+            "Manage Settings",
+            choices=choices,
+            style=self.questionaryStyle,
+            pointer="󰅂",
         ).ask()
 
     def print_settings_table(self, settings: dict[str, str]) -> None:
@@ -174,14 +190,22 @@ class UIManager:
             return
         table = Table(
             title="Settings",
-            title_style=f"bold {self.richColors['secondary']}",
-            border_style=self.richColors["border"],
+            title_style="secondary",
+            border_style="border",
             box=None,
-            header_style=f"bold {self.richColors['primary']}",
+            header_style="primary",
             expand=False,
         )
-        table.add_column("Option", style=self.richColors["muted"], justify="left")
-        table.add_column("Value", style=self.richColors["success"], justify="right")
+        table.add_column(
+            "Option",
+            style="muted",
+            justify="left",
+        )
+        table.add_column(
+            "Value",
+            style="success",
+            justify="right",
+        )
 
         for option, value in settings.items():
             table.add_row(option, str(value))

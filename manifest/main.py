@@ -20,6 +20,7 @@ from manifest.core.utils import (
     print_error,
     print_menu_output,
     print_success,
+    setup_utils_theme,
 )
 
 
@@ -164,8 +165,10 @@ def main():
 
     cfg = ConfigManager()
 
-    ui_theme = cfg.get_opt("theme") or "ansi"
-    ui = UIManager(theme=ui_theme)
+    rich_theme = cfg.get_rich_style()
+    setup_utils_theme(rich_theme)
+
+    ui = UIManager(rich_theme=rich_theme)
 
     # Initial Path Logic
     manifest_path = args.path or cfg.get_opt("manifest_path") or "."
