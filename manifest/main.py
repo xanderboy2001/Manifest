@@ -85,7 +85,20 @@ def handle_stow_menu(stowManager: StowManager, ui: UIManager) -> bool:
                     print_success(f"Successfully deployed {config_name}!")
                 ask_to_return()
             case "update_config":
-                pass
+                config_name = ui.choose_config(
+                    configs=stowManager.list_configs(),
+                    prompt="Choose a config to redeploy",
+                )
+                while config_name is None:
+                    print_error("Please select a config")
+                    config_name = ui.choose_config(
+                        configs=stowManager.list_configs(),
+                        prompt="Choose a config to redeploy",
+                    )
+                output = stowManager.update_config(config_name)
+                if output != "error":
+                    print_success(f"Successfully updated {config_name}!")
+                ask_to_return()
             case "back" | None:
                 return True
             case _:
