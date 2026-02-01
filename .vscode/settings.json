@@ -1,0 +1,34 @@
+{
+  // --- Python Specifics ---
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "always",
+      "source.organizeImports.ruff": "always"
+    }
+  },
+
+  // --- Ruff Native Server ---
+  "ruff.nativeServer": "auto",
+  "ruff.lint.enable": true,
+  "ruff.format.backend": "uv",
+  "ruff.codeAction.disableRuleComment": {
+    "enable": false
+  },
+  "ruff.configurationPreference": "filesystemFirst",
+
+  // --- Ensure Pylance doesn't double-report things Ruff finds
+  "python.analysis.diagnosticMode": "openFilesOnly",
+  "python.analysis.ignore": ["*"],
+
+  "errorLens.excludeBySource": ["cSpell"],
+  "cSpell.words": [
+    "ansibrightblack",
+    "ansicyan",
+    "ansimagenta",
+    "nvim",
+    "qmark",
+    "Unstowed"
+  ]
+}

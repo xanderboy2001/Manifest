@@ -51,7 +51,7 @@ class UIManager:
             styles.get("hidden").color.name if "hidden" in styles else "ansibrightblack"
         )
 
-        self.questionaryStyle = questionary.Style([
+        self.questionary_style = questionary.Style([
             ("qmark", f"fg:{prim} bold"),
             ("pointer", f"fg:{prim} bold"),
             ("highlighted", f"fg:{sec} bold"),
@@ -114,7 +114,7 @@ class UIManager:
         return questionary.select(
             "Main Menu",
             choices=choices,
-            style=self.questionaryStyle,
+            style=self.questionary_style,
             pointer="󰅂",
         ).ask()
 
@@ -145,7 +145,7 @@ class UIManager:
         return questionary.select(
             "Manage Manifest",
             choices=choices,
-            style=self.questionaryStyle,
+            style=self.questionary_style,
             pointer="󰅂",
         ).ask()
 
@@ -170,7 +170,7 @@ class UIManager:
         return questionary.select(
             "Manage Settings",
             choices=choices,
-            style=self.questionaryStyle,
+            style=self.questionary_style,
             pointer="󰅂",
         ).ask()
 
@@ -228,7 +228,7 @@ class UIManager:
         if not initial_path.endswith("/"):
             initial_path += "/"
         return questionary.path(
-            message=message, default=initial_path, style=self.questionaryStyle
+            message=message, default=initial_path, style=self.questionary_style
         ).ask()
 
     def choose_config(self, configs: list[str], prompt: str) -> str | None:
@@ -270,6 +270,6 @@ class UIManager:
         return questionary.select(
             prompt,
             choices=choices,
-            style=self.questionaryStyle,
+            style=self.questionary_style,
             pointer="󰅂",
         ).ask()

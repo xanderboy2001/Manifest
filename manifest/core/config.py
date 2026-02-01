@@ -57,7 +57,7 @@ class ConfigManager:
 
         self.theme_dir = self.config_dir / "themes"
 
-        self.configParser = ConfigParser()
+        self.config_parser = ConfigParser()
 
         self.defaults = self._parse_file(self.default_file)
         self._ensure_user_config()
