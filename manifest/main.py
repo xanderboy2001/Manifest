@@ -121,6 +121,7 @@ def handle_settings_menu(
             settings persistence and configuration parsing.
         ui_manger (UIManager): The UI instance handling user interaction
             and settings menus.
+        git_manager (GitManager): The Git instance handling git interactions.
 
     Returns:
         bool: True if the user chooses to return to the previous menu.

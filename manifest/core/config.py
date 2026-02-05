@@ -114,7 +114,7 @@ class ConfigManager:
             if temp_default.exists() and temp_default != self.config_file_path:
                 temp_default.rename(self.config_file_path)
 
-    def get_all_opts(self) -> dict | None:
+    def get_all_opts(self) -> dict[str, str]:
         """Retrieve all current user configuration options.
 
         Parses the user-specific configuration file and returns a dictionary
@@ -125,7 +125,10 @@ class ConfigManager:
                 associated values.
 
         """
-        return self._parse_file(self.config_file_path)
+        data = self._parse_file(self.config_file_path)
+        if data is None:
+            data = {}
+        return data
 
     def get_opt(self, key: str) -> str | None:
         """Retrieve a specific configuration value by key.
