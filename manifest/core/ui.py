@@ -70,7 +70,7 @@ class UIManager:
             )
         )
 
-    def first_run(self, current_path: str) -> str:
+    def set_manifest_path(self, current_path: str) -> str:
         """Guide the user through the initial setup process.
 
         Confirms the default manifest path or allows the user to specify a
@@ -94,6 +94,23 @@ class UIManager:
                 starting_dir=current_path,
             )
         return current_path
+
+    def prompt_for_git(self) -> bool:
+        """Prompt the user to enable Git-based version control.
+
+        Displays an interactive confirmation dialog asking if the user wants to
+        manage their manifest with Git, highlighting the benefit of remote
+        backups to services like GitHub.
+
+        Returns:
+            bool: True if the user elects to use Git, False otherwise
+
+        """
+        return questionary.confirm(
+            """Would you like to use git to manage version control?
+                (This will allow backups to GitHub)""",
+            default=True,
+        ).ask()
 
     def main_menu(self) -> str | None:
         """Display the top-level application navigation menu.

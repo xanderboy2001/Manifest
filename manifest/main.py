@@ -107,9 +107,7 @@ def handle_stow_menu(stow_manager: StowManager, ui_manager: UIManager) -> bool:
                 print_error(f"Unknown function in stow menu: {selected}")
 
 
-def handle_settings_menu(
-    config_manager: ConfigManager, ui_manger: UIManager, git_manager: GitManager
-) -> bool:
+def handle_settings_menu(config_manager: ConfigManager, ui_manger: UIManager) -> bool:
     """Run functions from the settings menu based on user selection.
 
     Provides a loop that captures user input from the settings sub-menu and
@@ -121,7 +119,6 @@ def handle_settings_menu(
             settings persistence and configuration parsing.
         ui_manger (UIManager): The UI instance handling user interaction
             and settings menus.
-        git_manager (GitManager): The Git instance handling git interactions.
 
     Returns:
         bool: True if the user chooses to return to the previous menu.
@@ -133,7 +130,7 @@ def handle_settings_menu(
             case "view_settings":
                 ui_manger.print_settings_table(config_manager.get_all_opts())
             case "edit_settings":
-                git_manager.initialize_repo()
+                pass
             case "import_settings":
                 pass
             case "export_settings":
@@ -177,16 +174,22 @@ def main():
     # Initial Path Logic
     manifest_path = args.path or cfg.get_opt("manifest_path") or "."
     if cfg.first_run:
-        final_path = ui.first_run(manifest_path)
+        final_path = ui.set_manifest_path(manifest_path)
 
         if final_path != manifest_path:
             cfg.set_opt("manifest_path", final_path)
             manifest_path = final_path
 
+        useGit = ui.prompt_for_git()
+        if useGit:
+            git_manager = GitManager(manifest_path)
+        else:
+            git_manager = None
+        if git_manager is not None:
+            print_debug("Using Git")
+
     stow = StowManager(manifest_path)
     stow.ensure_manifest_dir()
-
-    git_manager = GitManager(manifest_path)
 
     while True:
         main_menu_function = ui.main_menu()
@@ -195,9 +198,7 @@ def main():
             case "stow":
                 handle_stow_menu(stow_manager=stow, ui_manager=ui)
             case "settings":
-                handle_settings_menu(
-                    config_manager=cfg, ui_manger=ui, git_manager=git_manager
-                )
+                handle_settings_menu(config_manager=cfg, ui_manger=ui)
             case "exit" | None:
                 print_debug("Goodbye!")
                 sys.exit(0)
