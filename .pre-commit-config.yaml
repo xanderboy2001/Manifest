@@ -1,0 +1,15 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.1
+    hooks:
+      # Linter: Fixes imports and PEP8 errors
+      - id: ruff
+        args: [ --fix ]
+      # Formatter
+      - id: ruff-format
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.3.0
+    hooks:
+      - id: codespell
+        args: [ "--ignore-words-list", "manifest" ]

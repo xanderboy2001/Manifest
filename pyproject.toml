@@ -1,0 +1,47 @@
+[project]
+name = "manifest"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "configparser>=7.2.0",
+    "questionary>=2.1.1",
+    "rich>=14.3.1",
+]
+
+[project.scripts]
+manifest = "manifest.main:main"
+
+[dependency-groups]
+dev = [
+    "codespell>=2.4.1",
+    "pre-commit>=4.5.1",
+    "ruff>=0.14.14",
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py312']
+include = '\.pyi?$'
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+preview = true
+extend-exclude = ["__init__.py"]
+
+[tool.ruff.lint]
+# Enable pydocstyle checks (D), Pyflakes (F), Bluebeard/Pycodestyle (E, W), and Isort (I)
+select = ["D", "E", "F", "W", "I", "DOC", "UP"]
+ignore = []
+
+[tool.uv]
+package = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.target.wheel]
+packages = ["manifest"]
