@@ -25,6 +25,7 @@ from rich.theme import Theme
 console = Console()
 
 logging.basicConfig(
+    # TODO: Switch level back to INFO
     level="DEBUG",
     format="%(message)s",
     datefmt="[%X]",

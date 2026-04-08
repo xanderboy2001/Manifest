@@ -25,7 +25,9 @@ from manifest.core.utils import (
 )
 
 
-def handle_stow_menu(stow_manager: StowManager, ui_manager: UIManager) -> bool:
+def handle_stow_menu(
+    stow_manager: StowManager, ui_manager: UIManager, git_manager: GitManager | None
+) -> bool:
     """Execute functions selected from the stow management sub-menu.
 
     Provides a loop that captures user input from the UI and dispatches the
@@ -34,6 +36,8 @@ def handle_stow_menu(stow_manager: StowManager, ui_manager: UIManager) -> bool:
     Args:
         stow_manager (StowManager): The manager instance handling Stow logic.
         ui_manager (UIManager): The UI instance handling user interaction and menus.
+        git_manager (GitManager): An optional GitManager instance. If provided, changes
+            are committed to the repository after each successful operation.
 
     Returns:
         bool: True if the user chooses to return to the previous menu.
@@ -144,6 +148,46 @@ def handle_settings_menu(config_manager: ConfigManager, ui_manger: UIManager) ->
         ask_to_return()
 
 
+def handle_git_menu(ui_manager: UIManager, git_manager: GitManager | None) -> bool:
+    """Handle the main loop and routing for the interactive Git menu.
+
+    Displays the Git menu, processes the user's selection, and calls the
+    appropriate methods on the GitManager and UIManager to execute commands
+    like staging, committing, and viewing status.
+
+    Args:
+        ui_manager (UIManager): The user interface manager responsible for
+            displaying menus, tables, and prompting for inputs.
+        git_manager (GitManager | None): The manager responsible for executing
+            actual Git commands. If None, it indicates Git is not enabled.
+
+    Returns:
+        bool: Always returns True when the user chooses to go back or if
+        Git is not enabled, indicating control should be returned to the parent menu.
+
+    """
+    if not git_manager:
+        print_error("Git is not enabled!")
+        return True
+    while True:
+        selected = ui_manager.git_menu()
+        match selected:
+            case "stage":
+                git_manager.stage_all()
+                ask_to_return()
+            case "commit":
+                git_manager.commit(ui_manager.get_commit_message())
+                ask_to_return()
+            case "status":
+                status = git_manager.get_status()
+                ui_manager.print_git_status_table(status)
+                ask_to_return()
+            case "back" | None:
+                return True
+            case _:
+                print_error(f"Unknown function in git menu: {selected}")
+
+
 def main():
     """Initialize the application and run the main event loop.
 
@@ -182,11 +226,14 @@ def main():
 
         useGit = ui.prompt_for_git()
         if useGit:
-            git_manager = GitManager(manifest_path)
+            cfg.set_opt(key="use_git", value="True")
         else:
-            git_manager = None
-        if git_manager is not None:
-            print_debug("Using Git")
+            cfg.set_opt(key="use_git", value="False")
+
+    if cfg.get_opt("use_git") == "True":
+        git_manager = GitManager(manifest_path=manifest_path)
+    else:
+        git_manager = None
 
     stow = StowManager(manifest_path)
     stow.ensure_manifest_dir()
@@ -196,9 +243,13 @@ def main():
         print_debug(main_menu_function or "")
         match main_menu_function:
             case "stow":
-                handle_stow_menu(stow_manager=stow, ui_manager=ui)
+                handle_stow_menu(
+                    stow_manager=stow, ui_manager=ui, git_manager=git_manager
+                )
             case "settings":
                 handle_settings_menu(config_manager=cfg, ui_manger=ui)
+            case "git":
+                handle_git_menu(ui_manager=ui, git_manager=git_manager)
             case "exit" | None:
                 print_debug("Goodbye!")
                 sys.exit(0)

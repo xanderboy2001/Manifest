@@ -125,11 +125,37 @@ class UIManager:
         choices = [
             Choice(title="󱔗  Stow Configurations", value="stow"),
             Choice(title="  Edit Settings", value="settings"),
+            Choice(title="  Git Manager", value="git"),
             Choice(title="󰈆  Exit", value="exit"),
         ]
         self.print_title()
         return questionary.select(
             "Main Menu",
+            choices=choices,
+            style=self.questionary_style,
+            pointer="󰅂",
+        ).ask()
+
+    def git_menu(self) -> str | None:
+        """Display an interactive Git management menu to the user.
+
+        Uses the questionary library to prompt the user with a list of Git
+        actions.
+
+        Returns:
+            str | None: The string value corresponding to the user's selection
+            (e.g. 'stage', 'commit', 'status', 'back'). Returns None if the
+            user interrupts or aborts the prompt.
+
+        """
+        choices = [
+            Choice(title="Stage all changes", value="stage"),
+            Choice(title="Commit all staged changes", value="commit"),
+            Choice(title="View Status", value="status"),
+            Choice(title="󰌍 Back", value="back"),
+        ]
+        return questionary.select(
+            "Manage Git",
             choices=choices,
             style=self.questionary_style,
             pointer="󰅂",
@@ -290,3 +316,32 @@ class UIManager:
             style=self.questionary_style,
             pointer="󰅂",
         ).ask()
+
+    def print_git_status_table(self, status: list[tuple[str, str]]) -> None:
+        """Render and print a formatted table of the current Git status.
+
+        Args:
+            status (list[tuple[str, str]]): A list of tuples where the first
+                element is the readable status (e.g., 'Modified', 'Untracked')
+                and the second element is the file path.
+
+        """
+        table = Table(
+            title="Git Status",
+            title_style="secondary",
+            border_style="primary",
+        )
+        table.add_column("Status", justify="right")
+        table.add_column("File", justify="left")
+        for readable_status, file_path in status:
+            table.add_row(readable_status, file_path)
+        self.console.print(table)
+
+    def get_commit_message(self) -> str:
+        """Prompt the user to input a Git commit message.
+
+        Returns:
+            str: The commit message entered by the user.
+
+        """
+        return questionary.text("Enter a commit message").ask()
