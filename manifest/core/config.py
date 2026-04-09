@@ -21,7 +21,6 @@ class ConfigManager:
 
     This class manages the lifecycle of the user's configuration file, ensuring
     defaults are applied on first run and providing methods to retrieve or
-        parser = configparser.ConfigParser()
     modify specific configuration options.
 
     Attributes:
@@ -176,8 +175,8 @@ class ConfigManager:
         'ansi.ini' if the specified theme is missing.
 
         Returns:
-            A rich.theme Theme object initialized with the styles parsed
-            from the theme file.
+            Theme: A rich.theme Theme object initialized with the styles parsed
+                from the theme file.
 
         """
         theme_name = self.get_opt("theme") or "ansi"
