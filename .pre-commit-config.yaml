@@ -5,8 +5,12 @@ repos:
       # Linter: Fixes imports and PEP8 errors
       - id: ruff
         args: [ --fix ]
-      # Formatter
-      - id: ruff-format
+
+  - repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 26.3.0
+    hooks:
+      - id: black
+        language_version: python3.12
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.3.0
