@@ -62,7 +62,7 @@ class StowManager:
 
         """
         if not self.manifest_path.exists():
-            print_debug(f"Creating manifest directory ar {self.manifest_path}")
+            print_debug(f"Creating manifest directory at {self.manifest_path}")
             self.manifest_path.mkdir(parents=True, exist_ok=True)
 
     def list_configs(self) -> list[str]:
@@ -87,7 +87,7 @@ class StowManager:
         else:
             return ["No configs found."]
 
-    def add_config(self, config_path: Path) -> str:
+    def add_config(self, config_path: Path) -> list[str] | str:
         """Add existing configuration files to the manifest.
 
         Moves the specified configuration directory into the manifest structure
@@ -98,7 +98,7 @@ class StowManager:
                 directory to be managed.
 
         Returns:
-            str | List[str]: A list of relative paths of the files added if
+            list[str] | str: A list of relative paths of the files added if
                 successful, or the string "error" if an issue occurred.
 
         """
@@ -117,10 +117,8 @@ class StowManager:
             for name in files:
                 full_path = join(root, name)
                 if islink(full_path):
-                    print_error(
-                        f"Cannot add {full_path}: \
-                            Symlinks inside configs are not supported."
-                    )
+                    print_error(f"Cannot add {full_path}: \
+                            Symlinks inside configs are not supported.")
                     return "error"
                 config_files.append(relpath(full_path, config_path))
         try:
@@ -130,7 +128,7 @@ class StowManager:
         except Exception as e:
             print_error(f"Unexpected error: {str(e)}")
             return "error"
-        return "success"
+        return config_files
 
     def remove_config(self, config_name: str) -> str:
         """Remove a configuration package from the manifest and restore its files.
