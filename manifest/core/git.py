@@ -6,6 +6,7 @@ It ensures environment compatibility by verifying Git installation
 and handles repository setup through subprocess orchestration.
 """
 
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -42,13 +43,16 @@ class GitManager:
         self._check_git_installed()
         self.manifest_path = Path(manifest_path).expanduser()
         if self._is_initialized():
-            print_debug(f"Git repository already initialized at {self.manifest_path}.")
+            print_debug(
+                f"Git repository already initialized at {str(self.manifest_path)}."
+            )
         else:
             with Status(
-                f"Initializing git repository at {self.manifest_path}", spinner="dots"
+                f"Initializing git repository at {str(self.manifest_path)}...",
+                spinner="dots",
             ) as status:
                 try:
-                    cmd = ["git", "init", self.manifest_path]
+                    cmd = ["git", "init", str(self.manifest_path)]
                     result = subprocess.run(
                         cmd, capture_output=True, text=True, check=True
                     )
@@ -80,6 +84,294 @@ class GitManager:
         git_dir = self.manifest_path / ".git"
         return git_dir.exists() and git_dir.is_dir()
 
+    def _check_gh_installed(self) -> bool:
+        """Check whether the GitHub CLI is available in the system PATH.
+
+        Returns:
+            bool: True if 'gh' is found, False otherwise.
+
+        """
+        return bool(shutil.which("gh"))
+
+    def _check_gh_authenticated(self) -> bool:
+        """Verify that the GitHub CLI has an active authenticated session.
+
+        Runs 'gh auth status' and inspects the return code to determine
+        whether the user is currently logged in.
+
+        Returns:
+            bool: True if 'gh' reports an authenticated state, False otherwise.
+
+        """
+        with Status(
+            "Checking authentication status of GitHub CLI...", spinner="dots"
+        ) as status:
+            try:
+                cmd = ["gh", "auth", "status"]
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                status.update("[bold]Finishing Up...[/]")
+                if result.stdout:
+                    print_debug(result.stdout)
+                return not bool(result.returncode)
+            except subprocess.CalledProcessError as e:
+                print_error(
+                    f"GitHub CLI authentication status verification failed: {e.stderr}"
+                )
+                return False
+
+    def _check_ssh_github(self) -> bool:
+        """Test whether the system can authenticate to GitHub over SSH.
+
+        Attempts a non-login SSH handshake to git@github.com and checks
+        the output for GitHub's successful identity acknowledgement string.
+
+        Returns:
+            bool: True if SSH authentication succeeds, False otherwise.
+
+        """
+        with Status("Testing GitHub connection over SSH...", spinner="dots") as status:
+            try:
+                cmd = ["ssh", "-T", "git@github.com"]
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                status.update("[bold]Finishing Up...[/]")
+                if result.stdout:
+                    print_debug(result.stdout)
+                if result.returncode == 1:
+                    return True
+                else:
+                    return False
+            except subprocess.CalledProcessError as e:
+                print_error(f"Failed to test connection to GitHub over SSH: {e.stderr}")
+                return False
+
+    def detect_auth_method(self) -> str:
+        """Determine the best available authentication method for GitHub.
+
+        Checks for the GitHub CLI, SSH key access, and falls back to PAT.
+        The priority order is: gh_cli > ssh > pat.
+
+        Returns:
+            str: One of 'gh_cli', 'ssh', or 'pat'
+
+        """
+        if self._check_gh_installed() and self._check_gh_authenticated():
+            return "gh_cli"
+        if self._check_ssh_github():
+            return "ssh"
+        return "pat"
+
+    def create_github_repo(self, repo_name: str, private: bool = True) -> str | None:
+        """Create a new GitHub repository using the GitHub CLI.
+
+        Requires that 'gh' is installed and authenticated. Runs
+        'gh repo create' with the given name and visibility flag.
+
+        Args:
+            repo_name (str): The name of the repository to create on GitHub.
+            private (bool): Whether the repository should be private.
+                Defaults to True.
+
+        Returns:
+            str | None: The remote URL of the newly created repository,
+                or None if create failed.
+
+        """
+        with Status("Creating repository on GitHub...", spinner="dots") as status:
+            try:
+                cmd = ["gh", "repo", "create", repo_name]
+                if private:
+                    cmd.append("--private")
+                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+                status.update("[bold]Finishing Up...[/]")
+                if result.stdout:
+                    print_debug(result.stdout)
+                    return result.stdout.splitlines()[0].strip()
+                else:
+                    return None
+            except subprocess.CalledProcessError as e:
+                print_error(f"Failed to create repository on GitHub: {e.stderr}")
+                return None
+
+    def has_remote(self) -> bool:
+        """Check whether the local repository has a configured remote origin.
+
+        Runs 'git remote' and checks for the presence of 'origin'.
+
+        Returns:
+            bool: True if a remote named 'origin' exists, False otherwise.
+
+        """
+        with Status(
+            "Checking whether local repository has a configured remote origin...",
+            spinner="dots",
+        ) as status:
+            try:
+                cmd = ["git", "-C", str(self.manifest_path), "remote"]
+                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+                status.update("[bold]Finishing Up...[/]")
+                if result.stdout:
+                    print_debug(result.stdout)
+                    if "origin" in result.stdout:
+                        return True
+                return False
+            except subprocess.CalledProcessError as e:
+                print_error(
+                    "Failed to check whether local repository has a "
+                    f"configured remote origin: {e.stderr}"
+                )
+                return False
+
+    def add_remote(self, url: str) -> bool:
+        """Add a remote origin to the local Git repository.
+
+        Runs 'git remote add origin <url>'. If a remote named 'origin'
+        already exists, it will be updated via 'git remote set-url' instead.
+
+        Args:
+            url (str): The remote repository URL to add.
+
+        Returns:
+            bool: True if the remote was added or updated successfully,
+                False otherwise.
+
+        """
+        if self.has_remote():
+            cmd = [
+                "git",
+                "-C",
+                str(self.manifest_path),
+                "remote",
+                "set-url",
+                "origin",
+                url,
+            ]
+        else:
+            cmd = ["git", "-C", str(self.manifest_path), "remote", "add", "origin", url]
+        with Status(
+            "Adding remote origin to the local Git repository...", spinner="dots"
+        ) as status:
+            try:
+                subprocess.run(cmd, check=True)
+                status.update("[bold]Finishing Up...[/]")
+                return True
+            except subprocess.CalledProcessError as e:
+                print_error(
+                    f"Failed to add remote origin to the local git repository: "
+                    f"{e.stderr}"
+                )
+                return False
+
+    def push(self, set_upstream: bool = False) -> bool:
+        """Push committed changes to the remote origin.
+
+        Runs 'git push' from the manifest path. On the first push to a new
+        remote, passes '--set-upstream origin main' to establish tracking.
+
+        Args:
+            set_upstream (bool): If True, sets the upstream tracking branch
+                on push. Should be True on the initial push. Defaults to False.
+
+        Returns:
+            bool: True if the push succeeded, False otherwise.
+
+        """
+        env = os.environ.copy()
+        env["GIT_TERMINAL_PROMPT"] = "0"
+
+        with Status("Pushing changes to remote origin...", spinner="dots") as status:
+            try:
+                cmd = ["git", "-C", str(self.manifest_path), "push"]
+                if set_upstream:
+                    cmd += ["--set-upstream", "origin", "main"]
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                    stdin=subprocess.DEVNULL,
+                )
+                status.update("[bold]Finishing Up...[/]")
+                if result.stdout:
+                    print_debug(result.stdout)
+                return True
+            except subprocess.CalledProcessError as e:
+                print_error(f"Failed to push to remote origin: {e.stderr}")
+                return False
+
+    def pull(self) -> bool:
+        """Pull the latest changes from the remote origin.
+
+        Runs 'git pull' from the manifest path using the current tracking
+        branch.
+
+        Returns:
+            bool: True if the pull succeeded, False otherwise.
+
+        """
+        with Status(
+            "Pulling changes from the remote origin...", spinner="dots"
+        ) as status:
+            try:
+                cmd = ["git", "-C", str(self.manifest_path), "pull"]
+                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+                status.update("[bold]Finishing Up...[/]")
+                if result.stdout:
+                    print_debug(result.stdout)
+                return True
+            except subprocess.CalledProcessError as e:
+                print_error(f"Failed to pull changes from remote origin: {e.stderr}")
+                return False
+
+    def get_sync_status(self) -> tuple[int, int]:
+        """Determine how many commits the local branch is ahead or behind remote.
+
+        Runs 'git fetch' followed by 'git rev-list --count' comparisons
+        between HEAD and origin/HEAD to calculate divergence.
+
+        Returns:
+            tuple[int, int]: A tuple of (commits_ahead, commits_behind).
+                Both values will be 0 if the branch is fully in sync or if
+                no remote is configured.
+
+        """
+        if not self.has_remote():
+            return (0, 0)
+
+        with Status("Checking sync status with remote...", spinner="dots") as status:
+            try:
+                subprocess.run(
+                    ["git", "-C", str(self.manifest_path), "fetch"],
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                )
+
+                cmd = [
+                    "git",
+                    "-C",
+                    str(self.manifest_path),
+                    "rev-list",
+                    "--left-right",
+                    "--count",
+                    "HEAD...@{u}",
+                ]
+                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+                status.update("[bold]Finishing Up...[/]")
+
+                if result.stdout:
+                    ahead, behind = result.stdout.strip().split()
+                    return (int(ahead), int(behind))
+
+            except subprocess.CalledProcessError as e:
+                print_debug(
+                    f"Could not calculate sync status (no upstream branch?): {e.stderr}"
+                )
+                return (0, 0)
+            except ValueError:
+                print_error("Failed to parse git rev-list output.")
+                return (0, 0)
+        return (0, 0)
+
     def stage_all(self) -> bool:
         """Stage all changes in the manifest directory.
 
@@ -92,7 +384,7 @@ class GitManager:
         """
         with Status("Staging all files for commit...", spinner="dots") as status:
             try:
-                cmd = ["git", "-C", self.manifest_path, "add", "-A"]
+                cmd = ["git", "-C", str(self.manifest_path), "add", "-A"]
                 result = subprocess.run(cmd, capture_output=True, text=True, check=True)
                 status.update("[bold]Finishing up...[/]")
                 if result.stdout:
@@ -102,11 +394,14 @@ class GitManager:
                 return False
         return True
 
-    def commit(self, message: str) -> bool:
+    def commit(self, message: str, allow_empty: bool = False) -> bool:
         """Create a commit with all staged changes.
 
         Args:
-            message: The commit message describing the change being recorded.
+            message (str): The commit message describing the change being recorded.
+            allow_empty (bool): If True, creates the commit even when there are no
+                staged changes. Useful for the initial commit on a new repository.
+                Defaults to False.
 
         Returns:
             bool: True if the commit was created, False otherwise.
@@ -114,7 +409,9 @@ class GitManager:
         """
         with Status("Committing changes...", spinner="dots") as status:
             try:
-                cmd = ["git", "-C", self.manifest_path, "commit", "-m", message]
+                cmd = ["git", "-C", str(self.manifest_path), "commit", "-m", message]
+                if allow_empty:
+                    cmd.append("--allow-empty")
                 result = subprocess.run(cmd, capture_output=True, text=True, check=True)
                 status.update("[bold]Finishing up...[/]")
                 if result.stdout:
@@ -127,7 +424,7 @@ class GitManager:
     def get_status(self) -> list[tuple[str, str]]:
         """Return a list of changed files in the repository.
 
-        Runs 'git status --procelain' and translates the status codes into
+        Runs 'git status --short' and translates the status codes into
             human-readable strings.
 
         Returns:
@@ -139,7 +436,7 @@ class GitManager:
         raw_output = ""
         with Status("Getting status of git repository...", spinner="dots") as status:
             try:
-                cmd = ["git", "-C", self.manifest_path, "status", "--short"]
+                cmd = ["git", "-C", str(self.manifest_path), "status", "--short"]
                 result = subprocess.run(cmd, capture_output=True, text=True, check=True)
                 status.update("[bold]Finishing up...[/]")
                 if result.stdout:

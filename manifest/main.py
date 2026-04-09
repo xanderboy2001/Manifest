@@ -21,6 +21,7 @@ from manifest.core.utils import (
     print_error,
     print_menu_output,
     print_success,
+    print_warning,
     setup_utils_theme,
 )
 
@@ -225,8 +226,56 @@ def main():
             manifest_path = final_path
 
         useGit = ui.prompt_for_git()
+
         if useGit:
+            git_manager = GitManager(manifest_path=manifest_path)
             cfg.set_opt(key="use_git", value="True")
+            useRemote = ui.prompt_for_remote()
+
+            if useRemote:
+                cfg.set_opt("use_remote", "True")
+
+                platform = ui.prompt_for_remote_platform()
+                cfg.set_opt("remote_platform", platform)
+
+                auth_method = git_manager.detect_auth_method()
+                cfg.set_opt("remote_auth_method", auth_method)
+
+                if auth_method == "pat":
+                    pat = ui.prompt_for_pat()
+                    cfg.set_opt("remote_pat", pat)  # INSECURE
+
+                choice = ui.prompt_create_or_use_existing()
+
+                if choice == "create":
+                    if auth_method != "gh_cli":
+                        # warn: creation requires gh CLI
+                        print_warning("Remote repository creation requires GitHub CLI")
+                        remote_url = ui.prompt_for_remote_url()
+                    else:
+                        repo_name = ui.prompt_for_repo_name(
+                            default=Path(manifest_path).stem
+                        )
+                        remote_url = git_manager.create_github_repo(repo_name)
+                else:
+                    remote_url = ui.prompt_for_remote_url()
+
+                if remote_url:
+                    if auth_method == "pat" and pat:
+                        remote_url = remote_url.replace(
+                            "https://", f"https://{pat}@", 1
+                        )
+                    elif auth_method == "ssh" or auth_method == "gh_cli":
+                        remote_url = remote_url.replace(
+                            "https://github.com", "git@github.com:", 1
+                        )
+                        if not remote_url.endswith(".git"):
+                            remote_url += ".git"
+                    git_manager.add_remote(remote_url)
+                    cfg.set_opt("remote_url", remote_url)
+                    git_manager.stage_all()
+                    git_manager.commit("Initial commit", allow_empty=True)
+                    git_manager.push(set_upstream=True)
         else:
             cfg.set_opt(key="use_git", value="False")
 

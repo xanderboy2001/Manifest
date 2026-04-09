@@ -108,8 +108,136 @@ class UIManager:
         """
         return questionary.confirm(
             """Would you like to use git to manage version control?
-                (This will allow backups to GitHub)""",
+    (This will allow backups to GitHub)""",
             default=True,
+        ).ask()
+
+    def prompt_for_remote(self) -> bool:
+        """Ask the user whether to enable remote hosting for their manifest.
+
+        Displayed during the first-run setup, after Git has been enabled.
+
+        Returns:
+            bool: True if the user wants to enable remote hosting,
+                False otherwise.
+
+        """
+        return questionary.confirm(
+            "Would you like to enable remote backups?", default=True
+        ).ask()
+
+    def prompt_for_remote_platform(self) -> str:
+        """Prompt the user to select a remote hosting platform.
+
+        Presents a menu of supported platforms. GitHub is the default.
+        Additional platforms can be added to the choices list in the future
+
+        Returns:
+            str: The selected platform identifier (e.g., 'github').
+
+        """
+        choices = [Choice(title="GitHub", value="github")]
+        return questionary.select(
+            choices=choices,
+            default="github",
+            message="Choose a remote hosting platform",
+            style=self.questionary_style,
+        ).ask()
+
+    def prompt_for_remote_url(self) -> str:
+        """Prompt the user to enter the URL of an existing remote repository.
+
+        Used when the user already has a repository and does not want to
+        create a new one via the GitHub CLI.
+
+        Returns:
+            str: The remote URL entered by the user.
+
+        """
+        return questionary.text("Enter the URL of an existing remote repository").ask()
+
+    def prompt_create_or_use_existing(self) -> str:
+        """Ask the user whether to create a new repository or use an existing one.
+
+        Displayed after platform selection during remote setup. The 'create'
+        path requires the GitHub CLI. The 'existing' path accepts a URL.
+
+        Returns:
+            str: Either 'create' or 'existing'.
+
+        """
+        return questionary.select(
+            "Do you want to create a new repository or use an existing one?",
+            choices=[
+                Choice(title="Create New", value="create"),
+                Choice(title="Use Existing", value="existing"),
+            ],
+            style=self.questionary_style,
+        ).ask()
+
+    def prompt_for_pat(self) -> str:
+        """Prompt the user to enter a GitHub Personal Access Token.
+
+        Used as a fallback when neither 'gh' nor SSH authentication is
+        available. The token is masked during input.
+
+        Returns:
+            str: The PAT string entered by the user.
+
+        """
+        return questionary.text("Enter the GitHub PAT").ask()
+
+    def prompt_for_repo_name(self, default: str) -> str:
+        """Ask the user to provide a name for a new remote repository.
+
+        Args:
+            default (str): A suggested repository name, typically derived
+                from the manifest directory name.
+
+        Returns:
+            str: The repository name entered or confirmed by the user.
+
+        """
+        return questionary.text(
+            "Enter a name for the repository:", default=default
+        ).ask()
+
+    def prompt_sync_on_startup(self, ahead: int, behind: int) -> str:
+        """Inform the user of sync status and ask how to proceed.
+
+        Shown at startup when the local repository has diverged from remote.
+        Presents contextual options based on whether local branch is
+        ahead, behind, or both.
+
+        Args:
+            ahead (int): Number of local commits not yet pushed to remote.
+            behind (int): Number of remote commits not yet pulled locally.
+
+        Returns:
+            str: One of 'push', 'pull', 'both', or 'skip'
+
+        """
+        choices = []
+        default = None
+        if ahead > 0:
+            self.console.print(
+                f"There are {ahead} commits not yet pushed to the remote."
+            )
+            choices.append("Push")
+            default = "Push"
+        if behind > 0:
+            self.console.print(f"There are {behind} commits not yet pulled locally.")
+            choices.append("Pull")
+            default = "Pull"
+        if ahead > 0 and behind > 0:
+            choices.append("Both")
+            default = "Both"
+        choices.append("Skip")
+        return questionary.select(
+            "How would you like to sync?",
+            choices=choices,
+            default=default,
+            style=self.questionary_style,
         ).ask()
 
     def main_menu(self) -> str | None:

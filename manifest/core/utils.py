@@ -59,6 +59,16 @@ def print_error(message: str) -> None:
     console.print(f"[error]✘ {message}[/error]")
 
 
+def print_warning(message: str) -> None:
+    """Log a warning message using the Rich logging handler.
+
+    Args:
+        message (str): The warning string to log.
+
+    """
+    logger.warning(f"󰀦 {message}")
+
+
 def print_debug(message: str) -> None:
     """Log a debug message using the Rich logging handler.
 
