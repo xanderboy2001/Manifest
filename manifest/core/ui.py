@@ -266,7 +266,9 @@ class UIManager:
             pointer="󰅂",
         ).ask()
 
-    def git_menu(self) -> str | None:
+    def git_menu(
+        self, allow_push: bool = False, allow_pull: bool = False
+    ) -> str | None:
         """Display an interactive Git management menu to the user.
 
         Uses the questionary library to prompt the user with a list of Git
@@ -279,11 +281,19 @@ class UIManager:
 
         """
         choices = [
-            Choice(title="Stage all changes", value="stage"),
-            Choice(title="Commit all staged changes", value="commit"),
+            Choice(title="Stage All Changes", value="stage"),
+            Choice(title="Commit All Staged Changes", value="commit"),
             Choice(title="View Status", value="status"),
-            Choice(title="󰌍 Back", value="back"),
         ]
+
+        if allow_push:
+            choices.append(Choice(title="Push Changes to Remote", value="push"))
+
+        if allow_pull:
+            choices.append(Choice(title="Pull Changes from Remote", value="pull"))
+
+        choices.append(Choice(title="󰌍 Back", value="back"))
+
         return questionary.select(
             "Manage Git",
             choices=choices,

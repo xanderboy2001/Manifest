@@ -171,13 +171,26 @@ def handle_git_menu(ui_manager: UIManager, git_manager: GitManager | None) -> bo
         print_error("Git is not enabled!")
         return True
     while True:
-        selected = ui_manager.git_menu()
+        ahead, behind = git_manager.get_sync_status()
+        enable_push = False
+        enable_pull = False
+        if ahead > 0:
+            enable_push = True
+        if behind > 0:
+            enable_pull = True
+        selected = ui_manager.git_menu(allow_push=enable_push, allow_pull=enable_pull)
         match selected:
             case "stage":
                 git_manager.stage_all()
                 ask_to_return()
             case "commit":
                 git_manager.commit(ui_manager.get_commit_message())
+                ask_to_return()
+            case "push":
+                git_manager.push()
+                ask_to_return()
+            case "pull":
+                git_manager.pull()
                 ask_to_return()
             case "status":
                 status = git_manager.get_status()
