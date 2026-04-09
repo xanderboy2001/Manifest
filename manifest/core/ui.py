@@ -51,12 +51,14 @@ class UIManager:
             styles.get("hidden").color.name if "hidden" in styles else "ansibrightblack"
         )
 
-        self.questionary_style = questionary.Style([
-            ("qmark", f"fg:{prim} bold"),
-            ("pointer", f"fg:{prim} bold"),
-            ("highlighted", f"fg:{sec} bold"),
-            ("instruction", f"fg:{hidden} italic"),
-        ])
+        self.questionary_style = questionary.Style(
+            [
+                ("qmark", f"fg:{prim} bold"),
+                ("pointer", f"fg:{prim} bold"),
+                ("highlighted", f"fg:{sec} bold"),
+                ("instruction", f"fg:{hidden} italic"),
+            ]
+        )
 
     def print_title(self) -> None:
         """Display the application branding and title panel.
