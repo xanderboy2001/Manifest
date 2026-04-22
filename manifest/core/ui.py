@@ -51,14 +51,12 @@ class UIManager:
             styles.get("hidden").color.name if "hidden" in styles else "ansibrightblack"
         )
 
-        self.questionary_style = questionary.Style(
-            [
-                ("qmark", f"fg:{prim} bold"),
-                ("pointer", f"fg:{prim} bold"),
-                ("highlighted", f"fg:{sec} bold"),
-                ("instruction", f"fg:{hidden} italic"),
-            ]
-        )
+        self.questionary_style = questionary.Style([
+            ("qmark", f"fg:{prim} bold"),
+            ("pointer", f"fg:{prim} bold"),
+            ("highlighted", f"fg:{sec} bold"),
+            ("instruction", f"fg:{hidden} italic"),
+        ])
 
     def print_title(self) -> None:
         """Display the application branding and title panel.
@@ -87,7 +85,9 @@ class UIManager:
         """
         self.print_title()
         confirm = questionary.confirm(
-            f"Use manifest path: {current_path}?", default=True
+            f"Use manifest path: {current_path}?",
+            default=True,
+            style=self.questionary_style,
         ).ask()
 
         if not confirm:
@@ -112,6 +112,7 @@ class UIManager:
             """Would you like to use git to manage version control?
     (This will allow backups to GitHub)""",
             default=True,
+            style=self.questionary_style,
         ).ask()
 
     def prompt_for_remote(self) -> bool:
@@ -125,7 +126,9 @@ class UIManager:
 
         """
         return questionary.confirm(
-            "Would you like to enable remote backups?", default=True
+            "Would you like to enable remote backups?",
+            default=True,
+            style=self.questionary_style,
         ).ask()
 
     def prompt_for_remote_platform(self) -> str:
@@ -187,7 +190,9 @@ class UIManager:
             str: The PAT string entered by the user.
 
         """
-        return questionary.text("Enter the GitHub PAT").ask()
+        return questionary.text(
+            "Enter the GitHub PAT", style=self.questionary_style
+        ).ask()
 
     def prompt_for_repo_name(self, default: str) -> str:
         """Ask the user to provide a name for a new remote repository.
@@ -201,7 +206,9 @@ class UIManager:
 
         """
         return questionary.text(
-            "Enter a name for the repository:", default=default
+            "Enter a name for the repository:",
+            default=default,
+            style=self.questionary_style,
         ).ask()
 
     def prompt_sync_on_startup(self, ahead: int, behind: int) -> str:
@@ -477,11 +484,68 @@ class UIManager:
             table.add_row(readable_status, file_path)
         self.console.print(table)
 
-    def get_commit_message(self) -> str:
+    def select_gh_repo(self, repo_list: list[str]) -> str | None:
+        """Display a selection menu of GitHub repositories available to clone.
+
+        Args:
+            repo_list (list[str]): A list of repository names retrieved from
+                the authenticated GitHub account.
+
+        Returns:
+            str | None: The name of the selected repository, or None if the
+                user cancels the prompt.
+
+        """
+        return questionary.select(
+            message="Select a GitHub Repository to Clone",
+            choices=repo_list,
+            style=self.questionary_style,
+            pointer="󰅂",
+        ).ask()
+
+    def get_commit_message(self, default: str) -> str:
         """Prompt the user to input a Git commit message.
+
+        Args:
+            default (str): The default message to use.
 
         Returns:
             str: The commit message entered by the user.
 
         """
-        return questionary.text("Enter a commit message").ask()
+        return questionary.text("Enter a commit message", default=default).ask()
+
+    def choose_option_to_edit(self, settings: dict[str, str]) -> str | None:
+        """Display a selection menu for available settings to edit.
+
+        Args:
+            settings (dict[str, str]): The list of settings to choose from.
+
+        Returns:
+            str | None: The name of the selected setting or "back".
+
+        """
+        choices = [
+            Choice(title=f"{s} ({settings[s]})", value=s.lower()) for s in settings
+        ]
+        choices.append(Choice(title="󰌍  Back", value="back"))
+        return questionary.select(
+            "Choose a setting to edit", choices=choices, style=self.questionary_style
+        ).ask()
+
+    def edit_setting(self, default: str | None) -> str:
+        """Prompt the user for text input to change the value of a setting.
+
+        Args:
+            default (str): The existing value for the setting.
+
+        Returns:
+            str: The new value of the setting. Returns None if the user cancelled.
+
+        """
+        if default:
+            return questionary.text(
+                "New value:", default=default, style=self.questionary_style
+            ).ask()
+        else:
+            return questionary.text("New value:", style=self.questionary_style).ask()
