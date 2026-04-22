@@ -1,19 +1,14 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.1
+    rev: v0.15.11
     hooks:
       # Linter: Fixes imports and PEP8 errors
-      - id: ruff
-        args: [ --fix ]
-
-  - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 26.3.0
-    hooks:
-      - id: black
-        language_version: python3.12
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.3.0
     hooks:
       - id: codespell
-        args: [ "--ignore-words-list", "manifest" ]
+        args: ["--ignore-words-list", "manifest"]
