@@ -109,7 +109,7 @@ class StowManager:
             print_error(f"{config_path} is a symlink!")
             return "error"
 
-        pkg_name = config_path.name
+        pkg_name = config_path.stem
         rel_to_dotfiles_parent = relpath(config_path, self.manifest_path.parent)
         new_location = self.manifest_path / pkg_name / rel_to_dotfiles_parent
         config_files = []
@@ -117,8 +117,10 @@ class StowManager:
             for name in files:
                 full_path = join(root, name)
                 if islink(full_path):
-                    print_error(f"Cannot add {full_path}: \
-                            Symlinks inside configs are not supported.")
+                    print_error(
+                        f"Cannot add {full_path}: \
+                            Symlinks inside configs are not supported."
+                    )
                     return "error"
                 config_files.append(relpath(full_path, config_path))
         try:
