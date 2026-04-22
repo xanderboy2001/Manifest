@@ -60,7 +60,17 @@ def handle_stow_menu(
                     ask_to_return()
                 else:
                     print_success(f"Successfully added {config_path} to Manifest!")
-                    print_menu_output(output, title="Files Stowed")
+
+                if git_manager:
+                    pkg_name = Path(config_path).stem
+                    default_msg = f"Add {pkg_name} config"
+
+                    git_manager.stage_config(pkg_name)
+
+                    commit_msg = ui_manager.get_commit_message(default=default_msg)
+                    git_manager.commit(commit_msg)
+                else:
+                    print_debug("No git_manager")
             case "remove_config":
                 config_name = ui_manager.choose_config(
                     configs=stow_manager.list_configs(),
@@ -73,9 +83,19 @@ def handle_stow_menu(
                         prompt="Choose a config to remove from Manifest",
                     )
                 output = stow_manager.remove_config(config_name)
-                if output != "error":
+                if output == "error":
+                    ask_to_return()
+                else:
                     print_success(f"Successfully removed {config_name} from Manifest!")
-                ask_to_return()
+
+                if git_manager:
+                    pkg_name = Path(config_name).stem
+                    default_msg = f"Remove {pkg_name} config"
+
+                    git_manager.stage_config(config_name)
+
+                    commit_msg = ui_manager.get_commit_message(default=default_msg)
+                    git_manager.commit(commit_msg)
             case "deploy_config":
                 config_name = ui_manager.choose_config(
                     configs=stow_manager.list_configs(),
@@ -135,7 +155,18 @@ def handle_settings_menu(config_manager: ConfigManager, ui_manger: UIManager) ->
             case "view_settings":
                 ui_manger.print_settings_table(config_manager.get_all_opts())
             case "edit_settings":
-                pass
+                setting_to_edit = ui_manger.choose_option_to_edit(
+                    config_manager.get_all_opts()
+                )
+                if not setting_to_edit:
+                    return True
+                if setting_to_edit == "back":
+                    return True
+                default = None
+                if config_manager.get_opt(setting_to_edit):
+                    default = config_manager.get_opt(setting_to_edit)
+                new_value = ui_manger.edit_setting(default)
+                config_manager.set_opt(key=setting_to_edit, value=new_value)
             case "import_settings":
                 pass
             case "export_settings":
@@ -184,7 +215,7 @@ def handle_git_menu(ui_manager: UIManager, git_manager: GitManager | None) -> bo
                 git_manager.stage_all()
                 ask_to_return()
             case "commit":
-                git_manager.commit(ui_manager.get_commit_message())
+                git_manager.commit(ui_manager.get_commit_message(""))
                 ask_to_return()
             case "push":
                 git_manager.push()
@@ -200,6 +231,90 @@ def handle_git_menu(ui_manager: UIManager, git_manager: GitManager | None) -> bo
                 return True
             case _:
                 print_error(f"Unknown function in git menu: {selected}")
+
+
+def first_run(ui: UIManager, cfg: ConfigManager, manifest_path: str):
+    """Run the initial setup wizard on the first launch of the application.
+
+    Guides the user through configuring the manifest path, enabling Git,
+    and optionally connecting to a remote repository. Persists all choices
+    to the configuration manager. Exits early at any step if the user
+    declines further setup.
+
+    Args:
+        ui (UIManager): The UI instance used to prompt the user through
+            each setup step.
+        cfg (ConfigManager): The configuration manager used to persist
+            settings selected during setup.
+        manifest_path (str): The default manifest path to suggest to the
+            user, sourced from CLI arguments or application defaults.
+
+    """
+    final_path = ui.set_manifest_path(manifest_path)
+
+    if final_path != manifest_path:
+        cfg.set_opt("manifest_path", final_path)
+        manifest_path = final_path
+
+    if not ui.prompt_for_git():
+        cfg.set_opt(key="use_git", value="False")
+        return
+
+    cfg.set_opt("use_git", "True")
+
+    if not ui.prompt_for_remote():
+        # No remote - just init locally, nothing else needed
+        git_manager = GitManager(manifest_path=manifest_path)
+        git_manager.init_repo()
+        return
+
+    cfg.set_opt("use_remote", "True")
+
+    platform = ui.prompt_for_remote_platform()
+    cfg.set_opt("remote_platform", platform)
+
+    git_manager = GitManager(manifest_path=manifest_path)
+    auth_method = git_manager.detect_auth_method()
+    cfg.set_opt("remote_auth_method", auth_method)
+
+    if auth_method == "pat":
+        cfg.set_opt("remote_pat", ui.prompt_for_pat())
+
+    choice = ui.prompt_create_or_use_existing()
+
+    if choice == "create":
+        git_manager.init_repo()
+        if auth_method != "gh_cli":
+            print_warning("Remote repository creation requires GitHub CLI")
+            remote_url = ui.prompt_for_remote_url()
+        else:
+            repo_name = ui.prompt_for_repo_name(default=Path(manifest_path).stem)
+            remote_url = git_manager.create_github_repo(repo_name)
+            if not remote_url:
+                print_error("Failed to create GitHub repository. Aborting setup.")
+                return
+        cfg.set_opt("remote_url", remote_url)
+        git_manager.stage_all()
+        git_manager.commit("Initial commit", allow_empty=True)
+        git_manager.push(set_upstream=True)
+
+    else:  # "existing"
+        if auth_method == "gh_cli":
+            selected_repo = ui.select_gh_repo(git_manager.get_gh_repos())
+            if not selected_repo:
+                print_error(
+                    "Failed to get selection for existing GitHub repository. "
+                    + "Aborting setup."
+                )
+                return
+            git_manager.clone_repo(repo=selected_repo, use_ghcli=True)
+        else:
+            remote_url = ui.prompt_for_remote_url()
+            cfg.set_opt("remote_url", remote_url)
+            git_manager.add_remote(remote_url)
+            git_manager.stage_all()
+            git_manager.commit("Initial commit", allow_empty=True)
+            git_manager.push(set_upstream=True)
 
 
 def main():
@@ -232,65 +347,7 @@ def main():
     # Initial Path Logic
     manifest_path = args.path or cfg.get_opt("manifest_path") or "."
     if cfg.first_run:
-        final_path = ui.set_manifest_path(manifest_path)
-
-        if final_path != manifest_path:
-            cfg.set_opt("manifest_path", final_path)
-            manifest_path = final_path
-
-        useGit = ui.prompt_for_git()
-
-        if useGit:
-            git_manager = GitManager(manifest_path=manifest_path)
-            cfg.set_opt(key="use_git", value="True")
-            useRemote = ui.prompt_for_remote()
-
-            if useRemote:
-                cfg.set_opt("use_remote", "True")
-
-                platform = ui.prompt_for_remote_platform()
-                cfg.set_opt("remote_platform", platform)
-
-                auth_method = git_manager.detect_auth_method()
-                cfg.set_opt("remote_auth_method", auth_method)
-
-                if auth_method == "pat":
-                    pat = ui.prompt_for_pat()
-                    cfg.set_opt("remote_pat", pat)  # INSECURE
-
-                choice = ui.prompt_create_or_use_existing()
-
-                if choice == "create":
-                    if auth_method != "gh_cli":
-                        # warn: creation requires gh CLI
-                        print_warning("Remote repository creation requires GitHub CLI")
-                        remote_url = ui.prompt_for_remote_url()
-                    else:
-                        repo_name = ui.prompt_for_repo_name(
-                            default=Path(manifest_path).stem
-                        )
-                        remote_url = git_manager.create_github_repo(repo_name)
-                else:
-                    remote_url = ui.prompt_for_remote_url()
-
-                if remote_url:
-                    if auth_method == "pat" and pat:
-                        remote_url = remote_url.replace(
-                            "https://", f"https://{pat}@", 1
-                        )
-                    elif auth_method == "ssh" or auth_method == "gh_cli":
-                        remote_url = remote_url.replace(
-                            "https://github.com", "git@github.com:", 1
-                        )
-                        if not remote_url.endswith(".git"):
-                            remote_url += ".git"
-                    git_manager.add_remote(remote_url)
-                    cfg.set_opt("remote_url", remote_url)
-                    git_manager.stage_all()
-                    git_manager.commit("Initial commit", allow_empty=True)
-                    git_manager.push(set_upstream=True)
-        else:
-            cfg.set_opt(key="use_git", value="False")
+        first_run(ui=ui, cfg=cfg, manifest_path=manifest_path)
 
     if cfg.get_opt("use_git") == "True":
         git_manager = GitManager(manifest_path=manifest_path)
