@@ -6,6 +6,7 @@ It ensures environment compatibility by verifying Git installation
 and handles repository setup through subprocess orchestration.
 """
 
+import json
 import os
 import shutil
 import subprocess
@@ -42,25 +43,6 @@ class GitManager:
         """
         self._check_git_installed()
         self.manifest_path = Path(manifest_path).expanduser()
-        if self._is_initialized():
-            print_debug(
-                f"Git repository already initialized at {str(self.manifest_path)}."
-            )
-        else:
-            with Status(
-                f"Initializing git repository at {str(self.manifest_path)}...",
-                spinner="dots",
-            ) as status:
-                try:
-                    cmd = ["git", "init", str(self.manifest_path)]
-                    result = subprocess.run(
-                        cmd, capture_output=True, text=True, check=True
-                    )
-                    status.update("[bold]Finishing Up...[/]")
-                    if result.stdout:
-                        print_debug(result.stdout)
-                except subprocess.CalledProcessError as e:
-                    print_error(f"Initializing git repository failed: {e.stderr}")
 
     def _check_git_installed(self) -> None:
         """Verify that the Git executable is available in the system PATH.
@@ -144,6 +126,62 @@ class GitManager:
                 print_error(f"Failed to test connection to GitHub over SSH: {e.stderr}")
                 return False
 
+    def init_repo(self) -> None:
+        """Initialize a new Git repository at the manifest path.
+
+        Skips initialization if a repository already exists. Displays a status
+        spinner during the operation.
+
+        """
+        if self._is_initialized():
+            print_debug(
+                f"Git repository already initialized at {str(self.manifest_path)}."
+            )
+            return
+        with Status(
+            f"Initializing git repository at {str(self.manifest_path)}...",
+            spinner="dots",
+        ) as status:
+            try:
+                result = subprocess.run(
+                    ["git", "init", str(self.manifest_path)],
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                )
+                status.update("[bold]Finishing Up...[/]")
+                if result.stdout:
+                    print_debug(result.stdout)
+            except subprocess.CalledProcessError as e:
+                print_error(f"Initializing git repository failed: {e.stderr}")
+
+    def get_gh_repos(self) -> list[str]:
+        """Retrieve a list of repository names from the authenticated GitHub account.
+
+        Runs 'gh repo list --json name' and parses the result into a flat list
+        of repository name strings.
+
+        Returns:
+            list[str]: A list of repository names, or an empty list if the
+                request failed or returned no results.
+
+        """
+        with Status("Getting list of repos from GitHub...", spinner="dots") as status:
+            try:
+                cmd = ["gh", "repo", "list", "--json", "name"]
+                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+                status.update("[bold]Finishing Up...[/]")
+                if result.stdout:
+                    repos_data = json.loads(result.stdout)
+                    repo_list = [repo["name"] for repo in repos_data]
+                    return repo_list
+                else:
+                    print_error("Could not get any repos from GitHub CLI")
+                    return []
+            except subprocess.CalledProcessError as e:
+                print_error(f"Failed getting repos from GitHub CLI: {e.stderr}")
+                return []
+
     def detect_auth_method(self) -> str:
         """Determine the best available authentication method for GitHub.
 
@@ -191,6 +229,62 @@ class GitManager:
             except subprocess.CalledProcessError as e:
                 print_error(f"Failed to create repository on GitHub: {e.stderr}")
                 return None
+
+    def clone_repo(self, repo: str, use_ghcli: bool) -> None:
+        """Clone a remote repository into the manifest path.
+
+        Args:
+            repo (str): The repository name or URL to clone. When use_ghcli is
+                True, this should be a repository name in 'owner/repo' or
+                short 'repo' format recognized by the GitHub CLI.
+            use_ghcli (bool): If True, clones using 'gh repo clone' instead of
+                plain git, which handles authentication automatically.
+
+        """
+        if use_ghcli:
+            with Status("Cloning Git Repository...", spinner="dots") as status:
+                try:
+                    cmd = ["gh", "repo", "clone", repo, self.manifest_path]
+                    subprocess.run(cmd, check=True)
+                    status.update("[bold]Finishing Up...[/]")
+                except subprocess.CalledProcessError as e:
+                    print_error(f"Failed to clone GitHub repo: {e.stderr}")
+                    return
+
+    def get_remote_url(self) -> str:
+        """Retrieve the configured remote origin URL for the repository.
+
+        Runs 'git config --get remote.origin.url' from the manifest path.
+
+        Returns:
+            str: The remote origin URL, or an empty string if no remote is
+                configured or the command fails.
+
+        """
+        with Status(
+            f"Getting Remote URL for Repository at {self.manifest_path}...",
+            spinner="dots",
+        ) as status:
+            try:
+                cmd = [
+                    "git",
+                    "-C",
+                    self.manifest_path,
+                    "config",
+                    "--get",
+                    "remote.origin.url",
+                ]
+                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+                status.update("[bold]Finishing Up...[/]")
+                if result.stdout:
+                    print_debug(result.stdout)
+                    return result.stdout
+                else:
+                    print_error("Could not get remote url")
+                    return ""
+            except subprocess.CalledProcessError as e:
+                print_error(f"Failed to get remote url: {e.stderr}")
+                return ""
 
     def has_remote(self) -> bool:
         """Check whether the local repository has a configured remote origin.
@@ -391,6 +485,32 @@ class GitManager:
                     print_debug(result.stdout)
             except subprocess.CalledProcessError as e:
                 print_error(f"Adding unstaged changes failed: {e.stderr}")
+                return False
+        return True
+
+    def stage_config(self, config_name: str) -> bool:
+        """Stage a specific list of files for the next commit.
+
+        Runs 'git add -- <paths>' from the manifest path to stage only the
+        specified files, leaving other changes in the working tree unstaged.
+
+        Args:
+            config_name (str): The name of the config to stage.
+
+        Returns:
+            bool: True if staging completed without error or if paths was empty,
+                False otherwise.
+
+        """
+        with Status("Staging files for commit...", spinner="dots") as status:
+            try:
+                cmd = ["git", "-C", str(self.manifest_path), "add", config_name]
+                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+                status.update("[bold]Finishing Up...[/]")
+                if result.stdout:
+                    print_debug(result.stdout)
+            except subprocess.CalledProcessError as e:
+                print_error(f"Staging files failed: {e.stderr}")
                 return False
         return True
 
