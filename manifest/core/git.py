@@ -14,7 +14,7 @@ from pathlib import Path
 
 from rich.status import Status
 
-from .utils import print_debug, print_error
+from .utils import print_debug, print_error, print_warning
 
 
 class GitManager:
@@ -114,7 +114,7 @@ class GitManager:
         with Status("Testing GitHub connection over SSH...", spinner="dots") as status:
             try:
                 cmd = ["ssh", "-T", "git@github.com"]
-                result = subprocess.run(cmd, capture_output=True, text=True)
+                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
                 status.update("[bold]Finishing Up...[/]")
                 if result.stdout:
                     print_debug(result.stdout)
@@ -125,6 +125,63 @@ class GitManager:
             except subprocess.CalledProcessError as e:
                 print_error(f"Failed to test connection to GitHub over SSH: {e.stderr}")
                 return False
+
+    def _to_ssh_url(self, url: str) -> str:
+        """Convert a GitHub HTTPS remote URL to its SSH equivalent.
+
+        Args:
+            url (str): A GitHub HTTPS URL in the form
+                'https://github.com/owner/repo'
+
+        Returns:
+            str: The SSH equivalent in the form 'git@github.com:owner/repo.git'.
+                Returns the original URL unchanged if it is not a recognized
+                GitHub HTTPS URL.
+
+        """
+        if not url.lower().startswith("https://github.com"):
+            print_warning(f"{url} is not a recognized GitHub HTTPS URL")
+            return url
+
+        owner_repo = url.lower().split("https://github.com/")[1]
+        return f"git@github.com:{owner_repo}.git"
+
+    def _get_gh_protocol(self) -> str:
+        """Retrieve the Git protocol configured in the GitHub CLI.
+
+        Runs 'gh config get git_protocol' to determine whether the CLI
+        is set to communicate over SSH or HTTPS.
+
+        Returns:
+            str: Either 'ssh' or 'https'. Defaults to 'https' if the
+                command fails or the output is unrecognized.
+
+        """
+        with Status(
+            "Determining Git Protocol from GitHub CLI...", spinner="dots"
+        ) as status:
+            try:
+                cmd = ["gh", "config", "get", "git_protocol"]
+                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+                status.update("[bold]Finishing Up...[/]")
+                if result.stdout:
+                    if result.stdout.strip() == "ssh":
+                        return "ssh"
+                    else:
+                        print_warning(
+                            f"Output: {result.stdout.strip()} not recognized"
+                            + "Defaulting to 'https'."
+                        )
+                        return "https"
+                else:
+                    print_warning(
+                        "Did not receive any output from 'gh config get git_protocol'. "
+                        + "Defaulting to 'https'"
+                    )
+                    return "https"
+            except subprocess.CalledProcessError as e:
+                print_error(f"Failed to determine GitHub CLI protocol: {e.stderr}")
+                return "https"
 
     def init_repo(self) -> None:
         """Initialize a new Git repository at the manifest path.

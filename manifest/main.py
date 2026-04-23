@@ -294,8 +294,15 @@ def first_run(ui: UIManager, cfg: ConfigManager, manifest_path: str):
             if not remote_url:
                 print_error("Failed to create GitHub repository. Aborting setup.")
                 return
+
+        if auth_method == "ssh":
+            remote_url = git_manager._to_ssh_url(remote_url)
+        elif auth_method == "gh_cli":
+            if git_manager._get_gh_protocol() == "ssh":
+                remote_url = git_manager._to_ssh_url(remote_url)
         cfg.set_opt("remote_url", remote_url)
         git_manager.stage_all()
+        git_manager.add_remote(remote_url)
         git_manager.commit("Initial commit", allow_empty=True)
         git_manager.push(set_upstream=True)
 
@@ -311,6 +318,8 @@ def first_run(ui: UIManager, cfg: ConfigManager, manifest_path: str):
             git_manager.clone_repo(repo=selected_repo, use_ghcli=True)
         else:
             remote_url = ui.prompt_for_remote_url()
+            if auth_method == "ssh":
+                remote_url = git_manager._to_ssh_url(remote_url)
             cfg.set_opt("remote_url", remote_url)
             git_manager.add_remote(remote_url)
             git_manager.stage_all()
