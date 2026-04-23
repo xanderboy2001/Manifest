@@ -14,7 +14,7 @@ from pathlib import Path
 
 from rich.status import Status
 
-from .utils import print_debug, print_error, print_warning
+from manifest.core.utils import print_debug, print_error, print_success, print_warning
 
 
 class GitManager:
@@ -287,11 +287,11 @@ class GitManager:
                 print_error(f"Failed to create repository on GitHub: {e.stderr}")
                 return None
 
-    def clone_repo(self, repo: str, use_ghcli: bool) -> None:
+    def clone_repo(self, repo_name: str, use_ghcli: bool) -> None:
         """Clone a remote repository into the manifest path.
 
         Args:
-            repo (str): The repository name or URL to clone. When use_ghcli is
+            repo_name (str): The repository name or URL to clone. When use_ghcli is
                 True, this should be a repository name in 'owner/repo' or
                 short 'repo' format recognized by the GitHub CLI.
             use_ghcli (bool): If True, clones using 'gh repo clone' instead of
@@ -301,12 +301,15 @@ class GitManager:
         if use_ghcli:
             with Status("Cloning Git Repository...", spinner="dots") as status:
                 try:
-                    cmd = ["gh", "repo", "clone", repo, self.manifest_path]
+                    cmd = ["gh", "repo", "clone", repo_name, str(self.manifest_path)]
                     subprocess.run(cmd, check=True)
                     status.update("[bold]Finishing Up...[/]")
                 except subprocess.CalledProcessError as e:
                     print_error(f"Failed to clone GitHub repo: {e.stderr}")
                     return
+        print_success(
+            f"Cloned GitHub repository '{repo_name}' to {str(self.manifest_path)}"
+        )
 
     def get_remote_url(self) -> str:
         """Retrieve the configured remote origin URL for the repository.

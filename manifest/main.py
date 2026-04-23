@@ -323,7 +323,7 @@ def first_run(ui: UIManager, cfg: ConfigManager, manifest_path: str):
                     + "Aborting setup."
                 )
                 return
-            git_manager.clone_repo(repo=selected_repo, use_ghcli=True)
+            git_manager.clone_repo(repo_name=selected_repo, use_ghcli=True)
         else:
             remote_url = ui.prompt_for_remote_url()
             if auth_method == "ssh":
