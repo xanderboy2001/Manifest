@@ -9,6 +9,7 @@ Attributes:
 
 """
 
+import os
 import shutil
 from configparser import ConfigParser
 from pathlib import Path
@@ -48,11 +49,9 @@ class ConfigManager:
         self.template_dir = self.project_root / "default_configs"
         self.default_file = self.template_dir / "default.conf"
 
-        # TODO: Switch config_dir back to .config path
-        # config_dir = Path(
-        # os.getenv("XDG_CONFIG_HOME", Path.home() / "config")
-        # ) / "manifest"
-        self.config_dir = self.project_root / "config" / "manifest"
+        self.config_dir = (
+            Path(os.getenv("XDG_CONFIG_HOME", Path.home() / ".config")) / "manifest"
+        )
         self.config_file_path = self.config_dir / config_name
 
         self.theme_dir = self.config_dir / "themes"
