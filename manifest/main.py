@@ -97,6 +97,14 @@ def handle_stow_menu(
 
                     commit_msg = ui_manager.get_commit_message(default=default_msg)
                     git_manager.commit(commit_msg)
+            case "remove_all_configs":
+                if ui_manager.confirm_destructive_action("remove all configs"):
+                    stow_manager.remove_all_configs()
+                    print_success(
+                        "Successfully removed all configurations from Manifest"
+                    )
+                else:
+                    print_warning("User cancelled removal")
             case "deploy_config":
                 config_name = ui_manager.choose_config(
                     configs=stow_manager.list_configs(),

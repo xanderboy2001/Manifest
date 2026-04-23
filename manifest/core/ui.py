@@ -328,6 +328,10 @@ class UIManager:
                 title="Remove Existing Configuration from Manifest",
                 value="remove_config",
             ),
+            Choice(
+                title="Remove All Configurations from Manifest",
+                value="remove_all_configs",
+            ),
             Choice(title="Deploy Configuration from Manifest", value="deploy_config"),
             Choice(title="Update Configuration from Manifest", value="update_config"),
             Choice(title="󰌍 Back", value="back"),
@@ -549,3 +553,23 @@ class UIManager:
             ).ask()
         else:
             return questionary.text("New value:", style=self.questionary_style).ask()
+
+    def confirm_destructive_action(self, action: str) -> bool:
+        """Prompt the user to confirm a destructive or irreversible action.
+
+        Displays a warning message to the user indicating that the specified
+        action cannot be undone and requires explicit confirmation.
+
+        Args:
+            action (str): A description of the action being performed
+                (e.g., 'delete all configurations').
+
+        Returns:
+            bool: True if the user confirms the action, False otherwise.
+                Defaults to False for safety.
+        """
+        return questionary.confirm(
+            message=f"DANGER: Are you sure you want to {action}?",
+            default=False,
+            style=self.questionary_style,
+        ).ask()

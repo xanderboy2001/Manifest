@@ -15,7 +15,7 @@ from shutil import move
 
 from rich.status import Status
 
-from .utils import print_debug, print_error
+from .utils import print_debug, print_error, print_warning
 
 
 class StowManager:
@@ -184,6 +184,24 @@ class StowManager:
             except Exception as e:
                 print_error(f"Unexpected error: {str(e)}")
                 return "error"
+
+    def remove_all_configs(self) -> str:
+        """Remove all configuration packages from the manifest, and restore their files.
+
+        Uses list_configs to get a list of all configs, then runs remove_config with
+        each config as an argument to remove all configurations from the manifest.
+
+        Returns:
+            str: A status string indicating "success" or "error".
+        """
+        final_result = "success"
+        config_list = self.list_configs()
+        for config in config_list:
+            result = self.remove_config(config)
+            if result != "success":
+                print_warning(f"Failed to remove {config} from manifest")
+                final_result = "error"
+        return final_result
 
     def deploy_config(self, config_name: str) -> str:
         """Deploy a configuration package from the manifest using GNU Stow.
