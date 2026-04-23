@@ -233,8 +233,17 @@ def handle_git_menu(ui_manager: UIManager, git_manager: GitManager | None) -> bo
                 git_manager.pull()
                 ask_to_return()
             case "status":
-                status = git_manager.get_status()
-                ui_manager.print_git_status_table(status)
+                working_tree = git_manager.get_status()
+                ui_manager.print_git_status_table(working_tree)
+
+                ahead, behind = git_manager.get_sync_status()
+                if ahead > 0:
+                    print_success(f"{ahead} commit(s) ahead of remote")
+                if behind > 0:
+                    print_success(f"{behind} commit(s) behind remote")
+                if ahead == 0 and behind == 0 and git_manager.get_remote_url():
+                    print_success("in sync with remote")
+
                 ask_to_return()
             case "back" | None:
                 return True

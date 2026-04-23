@@ -15,6 +15,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from manifest.core.utils import print_success
+
 
 class UIManager:
     """Handle terminal user interface interactions and styling.
@@ -477,6 +479,9 @@ class UIManager:
                 and the second element is the file path.
 
         """
+        if not status:
+            print_success("Working tree clean")
+            return
         table = Table(
             title="Git Status",
             title_style="secondary",
