@@ -212,6 +212,8 @@ class GitManager:
             except subprocess.CalledProcessError as e:
                 print_error(f"Initializing git repository failed: {e.stderr}")
 
+        print_success(f"initialized git repository at {str(self.manifest_path)}")
+
     def get_gh_repos(self) -> list[str]:
         """Retrieve a list of repository names from the authenticated GitHub account.
 
@@ -271,7 +273,9 @@ class GitManager:
                 or None if create failed.
 
         """
-        with Status("Creating repository on GitHub...", spinner="dots") as status:
+        with Status(
+            f"Creating repository '{repo_name}' on GitHub...", spinner="dots"
+        ) as status:
             try:
                 cmd = ["gh", "repo", "create", repo_name]
                 if private:
@@ -280,6 +284,7 @@ class GitManager:
                 status.update("[bold]Finishing Up...[/]")
                 if result.stdout:
                     print_debug(result.stdout)
+                    print_success(f"Created repository '{repo_name}' on GitHub")
                     return result.stdout.splitlines()[0].strip()
                 else:
                     return None
@@ -407,6 +412,7 @@ class GitManager:
             try:
                 subprocess.run(cmd, check=True)
                 status.update("[bold]Finishing Up...[/]")
+                print_success("Added remote origin to the local Git repository")
                 return True
             except subprocess.CalledProcessError as e:
                 print_error(
@@ -447,6 +453,7 @@ class GitManager:
                 status.update("[bold]Finishing Up...[/]")
                 if result.stdout:
                     print_debug(result.stdout)
+                print_success("Pushed changed to remote origin")
                 return True
             except subprocess.CalledProcessError as e:
                 print_error(f"Failed to push to remote origin: {e.stderr}")
@@ -471,6 +478,7 @@ class GitManager:
                 status.update("[bold]Finishing Up...[/]")
                 if result.stdout:
                     print_debug(result.stdout)
+                print_success("Pulled changes from remote origin")
                 return True
             except subprocess.CalledProcessError as e:
                 print_error(f"Failed to pull changes from remote origin: {e.stderr}")
@@ -546,6 +554,7 @@ class GitManager:
             except subprocess.CalledProcessError as e:
                 print_error(f"Adding unstaged changes failed: {e.stderr}")
                 return False
+        print_success("Staged all changes")
         return True
 
     def stage_config(self, config_name: str) -> bool:
@@ -572,6 +581,7 @@ class GitManager:
             except subprocess.CalledProcessError as e:
                 print_error(f"Staging files failed: {e.stderr}")
                 return False
+        print_success(f"Staged config '{config_name}'")
         return True
 
     def commit(self, message: str, allow_empty: bool = False) -> bool:
@@ -599,6 +609,7 @@ class GitManager:
             except subprocess.CalledProcessError as e:
                 print_error(f"Committing changes failed: {e.stderr}")
                 return False
+        print_success("Committed changes")
         return True
 
     def get_status(self) -> list[tuple[str, str]]:
