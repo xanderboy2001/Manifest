@@ -453,7 +453,7 @@ class GitManager:
                 status.update("[bold]Finishing Up...[/]")
                 if result.stdout:
                     print_debug(result.stdout)
-                print_success("Pushed changed to remote origin")
+                print_success("Pushed changes to remote origin")
                 return True
             except subprocess.CalledProcessError as e:
                 print_error(f"Failed to push to remote origin: {e.stderr}")
