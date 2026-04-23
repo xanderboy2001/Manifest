@@ -216,8 +216,16 @@ def handle_git_menu(ui_manager: UIManager, git_manager: GitManager | None) -> bo
         enable_pull = False
         if ahead > 0:
             enable_push = True
+            if ui_manager.prompt_to_push(ahead):
+                push_succeeded = git_manager.push()
+                if push_succeeded:
+                    enable_push = False
         if behind > 0:
             enable_pull = True
+            if ui_manager.prompt_to_pull(behind):
+                pull_succeeded = git_manager.pull()
+                if pull_succeeded:
+                    enable_pull = False
         selected = ui_manager.git_menu(allow_push=enable_push, allow_pull=enable_pull)
         match selected:
             case "stage":

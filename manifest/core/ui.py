@@ -578,3 +578,49 @@ class UIManager:
             default=False,
             style=self.questionary_style,
         ).ask()
+
+    def prompt_to_push(self, num_ahead: int) -> bool:
+        """Prompt the user to confirm pushing changes to remote repository.
+
+        Displays a message indicating how many commits the working tree is
+        ahead of the remote and asks the user whether they wish to push the changes.
+
+        Args:
+            num_ahead (int): The number of commits the working tree is ahead of
+                the remote by.
+
+        Returns:
+            bool: True if the user elected to push the changes, False otherwise.
+
+        """
+        self.console.print(
+            f"The working tree is currently {num_ahead} commit(s) ahead of the remote."
+        )
+        return questionary.confirm(
+            message="Would you like to push the pending changes?",
+            default=True,
+            style=self.questionary_style,
+        ).ask()
+
+    def prompt_to_pull(self, num_behind: int) -> bool:
+        """Prompt the user to confirm pulling changes from the remote repository.
+
+        Displays a message indicating how many commits the working tree is
+            behind the remote by.
+
+        Args:
+            num_behind (int): The number of commits the working tree is behind
+                the remote by.
+
+        Returns:
+            bool: True if the user elected to pull the changes, False otherwise.
+
+        """
+        self.console.print(
+            f"The working tree is currently {num_behind} commit(s) behind the remote."
+        )
+        return questionary.confirm(
+            message="Would you like to pull the pending changes?",
+            default=True,
+            style=self.questionary_style,
+        ).ask()
