@@ -25,13 +25,22 @@ from rich.theme import Theme
 console = Console()
 
 logging.basicConfig(
-    # TODO: Switch level back to INFO
-    level="DEBUG",
     format="%(message)s",
     datefmt="[%X]",
     handlers=[RichHandler(console=console, rich_tracebacks=True, markup=True)],
 )
 logger = logging.getLogger("rich")
+
+
+def set_log_level(verbose: bool) -> None:
+    """Set the logging level for the application logger.
+
+    Args:
+        verbose (bool): If True, sets the log level to DEBUG.
+            Otherwise, INFO is used.
+
+    """
+    logger.setLevel(logging.DEBUG if verbose else logging.INFO)
 
 
 def setup_utils_theme(rich_theme: Theme) -> None:

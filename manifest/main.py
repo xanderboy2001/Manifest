@@ -22,6 +22,7 @@ from manifest.core.utils import (
     print_menu_output,
     print_success,
     print_warning,
+    set_log_level,
     setup_utils_theme,
 )
 
@@ -335,7 +336,11 @@ def main():
     parser.add_argument(
         "--dry-run", action="store_true", help="Simulate stow operation"
     )
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable verbose debug output"
+    )
     args = parser.parse_args()
+    set_log_level(args.verbose)
 
     cfg = ConfigManager()
 
