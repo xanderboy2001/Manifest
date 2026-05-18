@@ -43,3 +43,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.target.wheel]
 packages = ["manifest"]
+
+[tool.ty.environment]
+python = ".venv"
