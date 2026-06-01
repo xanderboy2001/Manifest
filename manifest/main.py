@@ -373,10 +373,11 @@ def main():
     parser.add_argument(
         "--verbose", "-v", action="store_true", help="Enable verbose debug output"
     )
+    parser.add_argument("--testing", action="store_true", help="Enable testing mode")
     args = parser.parse_args()
     set_log_level(args.verbose)
 
-    cfg = ConfigManager()
+    cfg = ConfigManager(testing_mode=args.testing)
 
     rich_theme = cfg.get_rich_style()
     setup_utils_theme(rich_theme)
@@ -384,7 +385,10 @@ def main():
     ui = UIManager(rich_theme=rich_theme)
 
     # Initial Path Logic
-    manifest_path = args.path or cfg.get_opt("manifest_path") or "."
+    if args.testing:
+        manifest_path = str(Path(Path(__file__).parent.parent / "run" / "dotfiles"))
+    else:
+        manifest_path = args.path or cfg.get_opt("manifest_path") or "."
     if cfg.first_run:
         first_run(ui=ui, cfg=cfg, manifest_path=manifest_path)
 

@@ -33,7 +33,9 @@ class ConfigManager:
 
     """
 
-    def __init__(self, config_name="manifest.conf") -> None:
+    def __init__(
+        self, config_name: str = "manifest.conf", testing_mode: bool = False
+    ) -> None:
         """Initialize the ConfigManager and prepare user configuration.
 
         Sets up project paths and ensures a user configuration file exists by copying
@@ -43,15 +45,21 @@ class ConfigManager:
             config_name (str): The filename for the user configuration.
                 Defaults to "manifest.conf".
 
+            testing_mode (bool): Whether to run the program in testing mode.
+                Defaults to False.
+
         """
         self.first_run = False
         self.project_root = Path(__file__).parent.parent
         self.template_dir = self.project_root / "default_configs"
         self.default_file = self.template_dir / "default.conf"
 
-        self.config_dir = (
-            Path(os.getenv("XDG_CONFIG_HOME", Path.home() / ".config")) / "manifest"
-        )
+        if testing_mode:
+            self.config_dir = Path(Path(self.project_root).parent / "run" / "config")
+        else:
+            self.config_dir = (
+                Path(os.getenv("XDG_CONFIG_HOME", Path.home() / ".config")) / "manifest"
+            )
         self.config_file_path = self.config_dir / config_name
 
         self.theme_dir = self.config_dir / "themes"
