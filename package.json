@@ -1,0 +1,21 @@
+{
+  "devDependencies": {
+    "@commitlint/cli": "^21.0.2",
+    "@commitlint/config-conventional": "^21.0.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.7"
+  },
+  "scripts": {
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.py": [
+      "ruff format",
+      "ruff check --fix"
+    ],
+    "pyproject.toml": [
+      "uv run validate-pyproject"
+    ],
+    "*": "codespell --skip='./.git,./.venv,./node_modules,package-lock.json'"
+  }
+}

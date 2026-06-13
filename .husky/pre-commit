@@ -1,0 +1,14 @@
+#!/bin/sh
+
+echo "󰒃 Scanning staged changes for exposed secrets..."
+if command -v gitleaks > /dev/null 2>&1; then
+  gitleaks protect --staged --verbose || exit 1
+else
+  echo "󰚭 Warning: gitleaks not installed. Run 'brew install gitleaks' to enforce secret protection."
+fi
+
+echo "󰍉 Running staged quality checks..."
+npx lint-staged || exit 1
+
+echo "󰛨 Running type validation..."
+uv run ty check || exit 1
