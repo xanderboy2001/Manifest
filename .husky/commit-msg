@@ -1,1 +1,14 @@
-npx --no -- commitlint --edit "$1"
+#!/bin/sh
+
+readonly COMMIT_MSG_FILE="$1"
+
+echo "󰒃 Validating commit message format..."
+if command -v npx >/dev/null 2>&1; then
+  npx --no -- commitlint --edit "$COMMIT_MSG_FILE" || exit 1
+elif command -v fish >/dev/null 2>&1; then
+  fish -c "nvm use lts > /dev/null 2>&1; npx --no -- commitlint --edit '$COMMIT_MSG_FILE'" || exit 1
+else
+  echo "󰚭 Error: 'npx' not found, and 'fish' is not available to locate it."
+  echo "Please ensure Node.js is installed and accessible in your PATH."
+  exit 1
+fi

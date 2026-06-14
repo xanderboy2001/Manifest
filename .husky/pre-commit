@@ -1,14 +1,24 @@
 #!/bin/sh
 
 echo "󰒃 Scanning staged changes for exposed secrets..."
-if command -v gitleaks > /dev/null 2>&1; then
+if command -v gitleaks >/dev/null 2>&1; then
   gitleaks protect --staged --verbose || exit 1
 else
   echo "󰚭 Warning: gitleaks not installed. Run 'brew install gitleaks' to enforce secret protection."
 fi
 
 echo "󰍉 Running staged quality checks..."
-npx lint-staged || exit 1
+if command -v npx >/dev/null 2>&1; then
+  npx lint-staged || exit 1
+elif command -v fish >/dev/null 2>&1; then
+  fish -c "nvm use lts > /dev/null 2>&1; npx lint-staged" || exit 1
+else
+  echo "󰚭 Error: 'npx' not found, and 'fish' is not available to locate it."
+  echo "Please ensure Node.js is installed and accessible in your PATH."
+  exit 1
+fi
 
 echo "󰛨 Running type validation..."
 uv run ty check || exit 1
+
+
