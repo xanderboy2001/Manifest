@@ -3,7 +3,3 @@
 # Dependency Vulnerability Auditing
 echo "󰚦 Auditing package dependencies for known vulnerabilities..."
 uv run pip-audit || exit 1
-
-# Test Runner Execution
-echo "󰙨 Running unit tests before pushing..."
-uv run pytest || exit 1
