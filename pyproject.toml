@@ -16,8 +16,10 @@ manifest = "manifest.main:main"
 [dependency-groups]
 dev = [
     "codespell>=2.4.1",
+    "pip-audit>=2.10.1",
     "pre-commit>=4.5.1",
     "ruff>=0.14.14",
+    "validate-pyproject>=0.25",
 ]
 
 [tool.ruff]
