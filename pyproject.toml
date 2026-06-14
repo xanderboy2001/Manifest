@@ -27,12 +27,14 @@ dev = [
 line-length = 88
 target-version = "py312"
 preview = true
-extend-exclude = ["__init__.py"]
 
 [tool.ruff.lint]
 # Enable pydocstyle checks (D), Pyflakes (F), Bluebeard/Pycodestyle (E, W), and Isort (I)
 select = ["D", "E", "F", "W", "I", "DOC", "UP"]
 ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["D104"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
